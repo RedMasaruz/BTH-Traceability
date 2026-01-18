@@ -35,26 +35,26 @@ const SHEET_A_NAME = "SheetA";
 const USER_ADMIN_SHEET_NAME = "UserAdmin";
 
 const SHEET_B_NAMES = [
-  "ล้งพี่บาสBDS",
-  "ล้งพี่Hunterเวียงแก่น",
-  "ล้งพี่ก้ามท่าแค",
-  "ล้งพี่กระรอก",
-  "ล้งพี่รัชช์เมืองนคร",
-  "ล้งพี่ตูนบางขัน",
-  "ล้งป๋องส์เมืองพัทลุง",
-  "ล้งบจก.จินดารัตน์ โปรดักส์",
-  "ล้งพี่ดอน",
-  "ล้งพี่เตยพี่เกรซ",
-  "ล้งพี่สมพงศ์พะยูนตรัง",
-  "กระท่อมปลอดสารคลองใหม่พัทลุง",
-  "ล้งหรั่งนุ้ยพระนคร",
-  "ล้งพี่เปรี้ยวหล่มสัก",
-  "ล้งพี.เจ.กระท่อมทอง",
-  "ล้งทรัพย์มะรุมฟาร์ม",
-  "สวนอิน-จักรภัทร",
-  "ล้งรักษ์อุทัย",
-  "ล้งพี่วิทย์วิสาหกิจชุมชนชาววัง",
-  "ล้งพี่สาโรจน์"
+  "ตัวแทนพี่บาสBDS",
+  "ตัวแทนพี่Hunterเวียงแก่น",
+  "ตัวแทนพี่ก้ามท่าแค",
+  "ตัวแทนพี่กระรอก",
+  "ตัวแทนพี่รัชช์เมืองนคร",
+  "ตัวแทนพี่ตูนบางขัน",
+  "ตัวแทนป๋องส์เมืองพัทลุง",
+  "ตัวแทนบจก.จินดารัตน์ โปรดักส์",
+  "ตัวแทนพี่ดอน",
+  "ตัวแทนพี่เตยพี่เกรซ",
+  "ตัวแทนพี่สมพงศ์พะยูนตรัง",
+  "ตัวแทนกระท่อมปลอดสารคลองใหม่พัทลุง",
+  "ตัวแทนหรั่งนุ้ยพระนคร",
+  "ตัวแทนพี่เปรี้ยวหล่มสัก",
+  "ตัวแทนพี.เจ.กระท่อมทอง",
+  "ตัวแทนทรัพย์มะรุมฟาร์ม",
+  "ตัวแทนสวนอิน-จักรภัทร",
+  "ตัวแทนรักษ์อุทัย",
+  "ตัวแทนพี่วิทย์วิสาหกิจชุมชนชาววัง",
+  "ตัวแทนพี่สาโรจน์"
 ];
 
 const FALLBACK_SECRET_KEY = 'I<1Ph%2Dx*Iu8P)OMQ-9GW]#AIeow5bLm_<x$Akh:$qd3Fx^0Cj*%&{7J!AlW8|-';
@@ -629,7 +629,7 @@ function writeSheetA(formData, sessionToken) {
         formLong: formData['a-long-affiliation'],
         formLongNorm: formLongNorm
       });
-      throw new Error('สิทธิ์ไม่เพียงพอสำหรับการบันทึกข้อมูลล้งนี้ — ตรวจสอบว่าชื่อล้งในฟอร์มตรงกับชื่อที่ใช้ล็อกอิน (long_name) หรือกับ username ในชีต Users');
+      throw new Error('สิทธิ์ไม่เพียงพอสำหรับการบันทึกข้อมูลตัวแทนนี้ — ตรวจสอบว่าชื่อตัวแทนในฟอร์มตรงกับชื่อที่ใช้ล็อกอิน (long_name) หรือกับ username ในชีต Users');
     }
 
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID_A);
@@ -639,13 +639,13 @@ function writeSheetA(formData, sessionToken) {
     if (sheet.getLastRow() === 0) {
       const headers = [
         "เวลา",
-        "ล้งที่สังกัด", "ชื่อ-นามสกุล", "เบอร์โทร", "รหัสเกษตรกร",
+        "ตัวแทนที่สังกัด", "ชื่อ-นามสกุล", "เบอร์โทร", "รหัสเกษตรกร",
         "ตำบล", "อำเภอ", "จังหวัด",
         "เบอร์ติดต่อฉุกเฉิน", "gps_x", "gps_y",
         "ขนาดแปลง", "ชนิดพืช", "ระบบให้น้ำ", "ระบบให้น้ำ_อื่นๆ",
         "วิธีให้ปุ๋ย", "วิธีให้ปุ๋ย_อื่นๆ",
-        "วันที่ล้งรับแร���", "จำนวนแร่ที่ล้งรับ",
-        "วันที่ล้งรับนาโน", "จำนวนนาโนที่ล้งรับ",
+        "วันที่ตัวแทนรับแร���", "จำนวนแร่ที่ตัวแทนรับ",
+        "วันที่ตัวแทนรับนาโน", "จำนวนนาโนที่ตัวแทนรับ",
         "วันที่เกษตรกรรับแร่", "จำนวนกระสอบ", "วันที่เกษตรกรรับนาโน", "จำนวนนาโน_ลิตร",
         "ค่าไมทราไจนีน", "สารเคมีที่ผ่านมา", "ยินยอม_ตัวอย่าง", "ยินยอม_ข้อมูล",
         "ผู้บันทึก", "หมายเหตุ_ภาคสนาม", "ลายเซ็นยืนยัน"
@@ -724,9 +724,9 @@ function writeSheetA(formData, sessionToken) {
 /* ========== SHEET B: writeSheetB ========== */
 function writeSheetB(formData) {
   try {
-    if (!formData || !formData['b-long-affiliation']) throw new Error('ข้อมูลไม���ครบถ้วน: ต้องระบุล้งที่สังกัด');
+    if (!formData || !formData['b-long-affiliation']) throw new Error('ข้อมูลไม���ครบถ้วน: ต้องระบุตัวแทนที่สังกัด');
     const longName = String(formData['b-long-affiliation']).trim();
-    if (!SHEET_B_NAMES.includes(longName)) throw new Error('ข้อมูลไม่ถูกต้อง: ไม่พบล้งในระบบ');
+    if (!SHEET_B_NAMES.includes(longName)) throw new Error('ข้อมูลไม่ถูกต้อง: ไม่พบตัวแทนในระบบ');
 
     Object.keys(formData).forEach(k => { if (typeof formData[k] === 'string') formData[k] = sanitizeInput(formData[k]); });
 
@@ -735,7 +735,7 @@ function writeSheetB(formData) {
     if (!sheet) {
       sheet = ss.insertSheet(longName);
       const headers = [
-        "เวลา", "ล้งที่สังกัด", "รหัสเกษตรกร", "ชื่อ-นามสกุล", "เบอร์โทร",
+        "เวลา", "ตัวแทนที่สังกัด", "รหัสเกษตรกร", "ชื่อ-นามสกุล", "เบอร์โทร",
         "การใช้ปุ๋ย", "การใช้นาโน", "การใช้แร่",
         "ค่าไมทราไจนีนหลังใช้", "อัตราการใช้แร่", "อัตราการใช้แร่_ปรับ", "อัตราการใช้นาโน", "อัตราการใช้นาโน_ปรับ",
         "ค่าไมทราไจนีน_หลัง", "ผู้บันทึก"
@@ -818,7 +818,7 @@ function createNewSheetForLong(longName) {
     if (!sheet) {
       sheet = ss.insertSheet(longName);
       const headers = [
-        "เวลา", "ล้งที่สังกัด", "รหัสเกษตรกร", "ชื่อ-นามสกุล", "เบอร์โทร",
+        "เวลา", "ตัวแทนที่สังกัด", "รหัสเกษตรกร", "ชื่อ-นามสกุล", "เบอร์โทร",
         "การใช้ปุ๋ย", "การใช้นาโน", "การใช้แร่",
         "ค่าไมทราไจนีนหลังใช้", "อัตราการใช้แร่", "อัตราการใช้แร่_ปรับ", "อัตราการใช้นาโน", "อัตราการใช้นาโน_ปรับ",
         "ค��าไมทราไจนีน_หลัง", "ผู้บันทึก"
@@ -840,7 +840,7 @@ function searchFarmerData(longAffiliation, farmerId) {
     const data = sheet.getDataRange().getValues();
     const headers = data[0];
     const idIndex = headers.indexOf('รหัสเกษตรกร');
-    const longIndex = headers.indexOf('ล้งที่สังกัด');
+    const longIndex = headers.indexOf('ตัวแทนที่สังกัด');
     const foundData = [];
     if (idIndex === -1 || longIndex === -1) return { success: false, message: "โครงสร้างชีตไม่ถูกต้อง", data: [] };
     for (let i = 1; i < data.length; i++) {
@@ -867,8 +867,8 @@ function getAllFarmersByLong(longName) {
     if (!sheet || sheet.getLastRow() <= 1) return { success: true, message: "ไม่พบข้อมูลเกษตรกร", data: [] };
     const data = sheet.getDataRange().getValues();
     const headers = data[0];
-    const longIndex = headers.indexOf('ล้งที่สังกัด');
-    if (longIndex === -1) return { success: false, message: "ไม่พบคอลัมน์ ล้งที่สังกัด", data: [] };
+    const longIndex = headers.indexOf('ตัวแทนที่สังกัด');
+    if (longIndex === -1) return { success: false, message: "ไม่พบคอลัมน์ ตัวแทนที่สังกัด", data: [] };
     const farmers = [];
     for (let i = 1; i < data.length; i++) {
       const row = data[i];
@@ -1323,7 +1323,7 @@ function submitForm(data) {
         "พิกัด_X","พิกัด_Y","ตำบล","อำเภอ","จังหวัด",
         "หลักฐานที่ดิน","จำนวนต้น","จำนวนรวมจากสายพันธุ์","วันที่ปลูก","จำนวนต้นพร้อมขาย",
         "ประวัติพื้นที่_3ปี","ประวัติพื้นที่_อื่นๆ","ระบบให้น้ำ","วิธีให้ปุ๋ย","ค่า PH น้ำ","ค่า PH ดิน","ฮอร์โมน_อื่นๆ",
-        "แร่ภูเขาไฟ","สถานะสารไมทราไจนีน","ค่าสารไมทราไจนีน","ฤดูแล้ง","ฤดูฝน","ฤดูหนาว",
+        "แร่ภูเขาไฟ","สถานะสารไมทราไจนีน","ค่าสารไมทราไจนีน","ฤดูแตัวแทน","ฤดูฝน","ฤดูหนาว",
         "GAP_สถานะ","GAP_เริ่ม","GAP_หมดอายุ",
         "GACP_สถานะ","GACP_เริ่ม","GACP_หมดอายุ",
         "สถานะสัญญา",
@@ -1536,7 +1536,7 @@ function getAllMerged(token) {
 
     // Merge farmers with usage
     const merged = farmers.map(f => {
-      const long = String(f['ล้งที่สังกัด'] || '').trim();
+      const long = String(f['ตัวแทนที่สังกัด'] || '').trim();
       const fid = String(f['รหัสเกษตรกร'] || '').trim();
       const key = `${long}__${fid}`;
       const usage = usageMap[key] || null;
