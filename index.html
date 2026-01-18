@@ -3473,9 +3473,13 @@
 
             // Update long dropdowns for Sheet B views when user is logged in
             if (viewId === 'sheet-b-view' || viewId === 'sheet-b-use-view') {
+                console.log(`📋 Showing ${viewId}, checking login status...`);
                 const currentUser = checkLoginStatus();
                 if (currentUser && currentUser.longName) {
+                    console.log(`✅ User logged in: ${currentUser.longName}`);
                     updateAllLongDropdowns(currentUser.longName);
+                } else {
+                    console.log('❌ No user logged in or no longName');
                 }
             }
 
@@ -4814,9 +4818,11 @@
         }
 
         function checkAuthAndShowSubmenu() {
+            console.log('🔐 checkAuthAndShowSubmenu called');
             const currentUser = checkLoginStatus();
 
             if (currentUser) {
+                console.log(`✅ User authenticated: ${currentUser.longName}`);
                 showView('submenu-view');
                 // Update all long dropdowns when navigating to submenu
                 updateAllLongDropdowns(currentUser.longName);
@@ -4832,6 +4838,7 @@
                 }
 
             } else {
+                console.log('❌ User not authenticated, showing login modal');
                 showLoginModal();
             }
         }
@@ -4995,6 +5002,8 @@
         // DROPDOWN MANAGEMENT
         // =============================================
         function updateAllLongDropdowns(selectedLong) {
+            console.log('🔄 updateAllLongDropdowns called with:', selectedLong);
+            
             const longSelectors = [
                 'a-long-affiliation',
                 'b-long-affiliation',
@@ -5004,15 +5013,42 @@
             longSelectors.forEach(selector => {
                 const element = document.getElementById(selector);
                 if (element) {
+                    // If dropdown is empty, populate it first
+                    if (element.options.length === 0) {
+                        console.log(`  ⚠️ Dropdown ${selector} is empty, populating...`);
+                        LONG_OPTIONS.forEach(option => {
+                            const opt = document.createElement('option');
+                            opt.value = option.value;
+                            opt.textContent = option.text;
+                            if (option.value === "") {
+                                opt.disabled = true;
+                                opt.selected = true;
+                            }
+                            element.appendChild(opt);
+                        });
+                    }
+                    
+                    console.log(`  Checking dropdown: ${selector}, options count: ${element.options.length}`);
+                    
+                    let found = false;
                     for (let i = 0; i < element.options.length; i++) {
                         if (element.options[i].value === selectedLong) {
                             element.selectedIndex = i;
+                            found = true;
+                            console.log(`  ✅ Matched at index ${i} for ${selector}`);
                             break;
                         }
+                    }
+                    
+                    if (!found && element.options.length > 0) {
+                        console.log(`  ⚠️ No match found for "${selectedLong}" in ${selector}`);
+                        console.log(`  Available options:`, Array.from(element.options).map(o => o.value));
                     }
 
                     element.disabled = true;
                     element.classList.add('bg-gray-100', 'cursor-not-allowed');
+                } else {
+                    console.log(`  ❌ Element not found: ${selector}`);
                 }
             });
             updateLongDropdownLabels(true);
@@ -7205,14 +7241,18 @@
         // =============================================
         window.onload = () => {
             try {
+                console.log('🚀 Starting system initialization...');
                 populateLongOptions();
                 showView('main-menu-view');
                 initializeFertilizerCheckboxes();
 
                 const currentUser = checkLoginStatus();
                 if (currentUser) {
+                    console.log('✅ User already logged in:', currentUser.longName);
                     updateAllLongDropdowns(currentUser.longName);
                     updateSheetALongDropdown();
+                } else {
+                    console.log('ℹ️ No active user session');
                 }
 
                 isAppsScriptReady('Initialization');
