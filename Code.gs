@@ -70,23 +70,28 @@ function include(filename) {
   return HtmlService.createHtmlOutputFromFile(filename).getContent();
 }
 
-function doGet() {
+function doPost(e) {
   try {
-    const tpl = HtmlService.createTemplateFromFile('index.html');
-    return tpl.evaluate()
-      .setTitle('MitraApp')
-      .addMetaTag('viewport', 'width=device-width, initial-scale=1.0')
-      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
-  } catch (e) {
-    try {
-      const tpl = HtmlService.createTemplateFromFile('index');
-      return tpl.evaluate()
-        .setTitle('MitraApp')
-        .addMetaTag('viewport', 'width=device-width, initial-scale=1.0')
-        .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
-    } catch (err) {
-      return HtmlService.createHtmlOutput(`<pre>Template load error: ${err.message}</pre>`);
+    const params = e.parameter;
+    const functionName = params.function;
+    const args = JSON.parse(params.args || '[]');
+
+    // Call the requested function
+    if (typeof this[functionName] === 'function') {
+      const result = this[functionName].apply(this, args);
+      return ContentService
+        .createTextOutput(JSON.stringify(result))
+        .setMimeType(ContentService.MimeType.JSON);
+    } else {
+      throw new Error('Function not found: ' + functionName);
     }
+  } catch (error) {
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        success: false,
+        message: error.message
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
   }
 }
 
