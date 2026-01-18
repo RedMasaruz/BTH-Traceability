@@ -6307,7 +6307,7 @@
                     submitBtnEl.innerHTML = '<div class="loading-spinner"></div> กำลังส่ง...';
 
                     google.script.run.withSuccessHandler(msg => {
-                        showCustomAlert(msg, 'success');
+                        showMessageBox('✅ สำเร็จ', msg);
                         document.getElementById('kratomForm').reset();
 
                         // Hide "other" inputs, agent input and GAP/GACP ranges after reset
@@ -6363,7 +6363,7 @@
                                     + "<br>3. สิทธิ์ในการเข้าถึง Google Sheet นั้น";
                             }
                         }
-                        showCustomAlert(errorMessage, 'danger');
+                        showMessageBox('❌ ข้อผิดพลาด', errorMessage);
                         submitBtnEl.disabled = false;
                         submitBtnEl.innerHTML = originalText;
                     }).submitForm(formDataObj);
