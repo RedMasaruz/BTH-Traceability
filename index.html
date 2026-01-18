@@ -3471,6 +3471,14 @@
                 updateSheetALongDropdown();
             }
 
+            // Update long dropdowns for Sheet B views when user is logged in
+            if (viewId === 'sheet-b-view' || viewId === 'sheet-b-use-view') {
+                const currentUser = checkLoginStatus();
+                if (currentUser && currentUser.longName) {
+                    updateAllLongDropdowns(currentUser.longName);
+                }
+            }
+
             updateBackButton(viewId);
 
             previousView = currentView;
@@ -4810,6 +4818,8 @@
 
             if (currentUser) {
                 showView('submenu-view');
+                // Update all long dropdowns when navigating to submenu
+                updateAllLongDropdowns(currentUser.longName);
                 const header = document.querySelector('#submenu-view header');
                 if (header) {
                     // ensure we don't append duplicates
