@@ -3301,6 +3301,23 @@
             { value: "ตัวแทนพี่สาโรจน์", text: "ตัวแทนพี่สาโรจน์" },
         ];
 
+        /**
+         * Normalize longName for backward compatibility
+         * Converts "ล้ง" prefix to "ตัวแทน" prefix
+         */
+        function normalizeLongName(longName) {
+            if (!longName) return longName;
+            
+            // If it starts with "ล้ง", replace with "ตัวแทน"
+            if (longName.startsWith('ล้ง')) {
+                const normalized = longName.replace(/^ล้ง/, 'ตัวแทน');
+                console.log(`🔄 Normalized "${longName}" → "${normalized}"`);
+                return normalized;
+            }
+            
+            return longName;
+        }
+
         if (isGitHubPages && typeof google === 'undefined') {
             // Create mock google.script.run for GitHub Pages
             window.google = {
@@ -3954,8 +3971,11 @@
             const longSelect = document.getElementById('a-long-affiliation');
 
             if (currentUser && longSelect) {
+                // Normalize longName for backward compatibility
+                const normalizedLongName = normalizeLongName(currentUser.longName);
+                
                 for (let i = 0; i < longSelect.options.length; i++) {
-                    if (longSelect.options[i].value === currentUser.longName) {
+                    if (longSelect.options[i].value === normalizedLongName) {
                         longSelect.selectedIndex = i;
                         longSelect.disabled = true;
                         longSelect.classList.add('bg-gray-100', 'cursor-not-allowed');
@@ -5004,6 +5024,9 @@
         function updateAllLongDropdowns(selectedLong) {
             console.log('🔄 updateAllLongDropdowns called with:', selectedLong);
             
+            // Normalize the selectedLong for backward compatibility
+            const normalizedLong = normalizeLongName(selectedLong);
+            
             const longSelectors = [
                 'a-long-affiliation',
                 'b-long-affiliation',
@@ -5032,7 +5055,7 @@
                     
                     let found = false;
                     for (let i = 0; i < element.options.length; i++) {
-                        if (element.options[i].value === selectedLong) {
+                        if (element.options[i].value === normalizedLong) {
                             element.selectedIndex = i;
                             found = true;
                             console.log(`  ✅ Matched at index ${i} for ${selector}`);
@@ -5041,7 +5064,7 @@
                     }
                     
                     if (!found && element.options.length > 0) {
-                        console.log(`  ⚠️ No match found for "${selectedLong}" in ${selector}`);
+                        console.log(`  ⚠️ No match found for "${normalizedLong}" in ${selector}`);
                         console.log(`  Available options:`, Array.from(element.options).map(o => o.value));
                     }
 
