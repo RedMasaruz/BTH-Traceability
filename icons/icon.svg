@@ -1,0 +1,25 @@
+<svg width="512" height="512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="512" height="512" fill="#16a34a" rx="64"/>
+  
+  <!-- Leaf design representing agriculture -->
+  <g transform="translate(256, 256)">
+    <!-- Main leaf -->
+    <path d="M -80,-120 Q -20,-180 60,-120 Q 80,-60 60,0 Q 40,60 0,80 Q -40,60 -60,0 Q -80,-60 -80,-120 Z" 
+          fill="#ffffff" opacity="0.95"/>
+    
+    <!-- Leaf veins -->
+    <path d="M -20,-120 L 0,60" stroke="#16a34a" stroke-width="4" fill="none" opacity="0.3"/>
+    <path d="M -40,-80 Q -10,-40 0,0" stroke="#16a34a" stroke-width="2" fill="none" opacity="0.3"/>
+    <path d="M 20,-80 Q 10,-40 0,20" stroke="#16a34a" stroke-width="2" fill="none" opacity="0.3"/>
+    
+    <!-- Small decorative elements (representing kratom/herbs) -->
+    <circle cx="-100" cy="40" r="12" fill="#B9FBC0"/>
+    <circle cx="100" cy="40" r="12" fill="#B9FBC0"/>
+    <circle cx="0" cy="120" r="12" fill="#B9FBC0"/>
+    
+    <!-- Text BTH -->
+    <text x="0" y="180" font-family="Arial, sans-serif" font-size="48" font-weight="bold" 
+          fill="#ffffff" text-anchor="middle">BTH</text>
+  </g>
+</svg>

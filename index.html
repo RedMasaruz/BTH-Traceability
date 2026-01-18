@@ -6,6 +6,25 @@
     <!-- Updated viewport to include safe-area for iOS devices -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>ระบบบันทึกและติดตามเกษตรกร</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="ระบบบันทึกและติดตามข้อมูลเกษตรกร - บริษัท บ้านไทยเฮิร์บเซ็นเตอร์ จำกัด">
+    <meta name="theme-color" content="#16a34a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="BTH Farmer">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    
+    <!-- App Icons -->
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512x512.png">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-192x192.png">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -7175,6 +7194,95 @@
 
         // alias navigateTo to existing showView
         window.navigateTo = showView;
+
+        // =============================================
+        // PWA SERVICE WORKER REGISTRATION
+        // =============================================
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('✅ Service Worker registered successfully:', registration.scope);
+                        
+                        // Check for updates periodically
+                        setInterval(() => {
+                            registration.update();
+                        }, 60000); // Check every minute
+                        
+                        // Handle service worker updates
+                        registration.addEventListener('updatefound', () => {
+                            const newWorker = registration.installing;
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    // New service worker available
+                                    console.log('🔄 New version available! Please refresh.');
+                                    
+                                    // Optionally show a notification to the user
+                                    if (window.confirm('มีเวอร์ชันใหม่ของระบบ คุณต้องการรีเฟรชหน้าเพื่ออัพเดทหรือไม่?')) {
+                                        newWorker.postMessage({ type: 'SKIP_WAITING' });
+                                        window.location.reload();
+                                    }
+                                }
+                            });
+                        });
+                    })
+                    .catch(error => {
+                        console.error('❌ Service Worker registration failed:', error);
+                    });
+                
+                // Handle service worker controller change (when new SW takes over)
+                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                    console.log('🔄 Service Worker controller changed, reloading page...');
+                    window.location.reload();
+                });
+            });
+        } else {
+            console.warn('⚠️ Service Workers are not supported in this browser');
+        }
+
+        // =============================================
+        // PWA INSTALL PROMPT
+        // =============================================
+        let deferredPrompt;
+        
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Prevent the mini-infobar from appearing on mobile
+            e.preventDefault();
+            // Stash the event so it can be triggered later
+            deferredPrompt = e;
+            
+            console.log('💾 PWA install prompt available');
+            
+            // Optionally show a custom install button
+            // You can create a button in the UI and call showInstallPrompt() when clicked
+        });
+        
+        window.showInstallPrompt = async function() {
+            if (!deferredPrompt) {
+                console.log('ℹ️ Install prompt not available');
+                return;
+            }
+            
+            // Show the install prompt
+            deferredPrompt.prompt();
+            
+            // Wait for the user to respond to the prompt
+            const { outcome } = await deferredPrompt.userChoice;
+            
+            if (outcome === 'accepted') {
+                console.log('✅ User accepted the install prompt');
+            } else {
+                console.log('❌ User dismissed the install prompt');
+            }
+            
+            // Clear the deferredPrompt
+            deferredPrompt = null;
+        };
+        
+        window.addEventListener('appinstalled', () => {
+            console.log('✅ PWA installed successfully');
+            deferredPrompt = null;
+        });
     </script>
 </body>
 

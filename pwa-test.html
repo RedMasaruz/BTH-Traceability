@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PWA Test - BTH System</title>
+    <style>
+        body {
+            font-family: 'Noto Sans Thai', Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f8fa;
+        }
+        .test-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #16a34a;
+            border-bottom: 3px solid #16a34a;
+            padding-bottom: 10px;
+        }
+        .test-item {
+            margin: 20px 0;
+            padding: 15px;
+            border-left: 4px solid #16a34a;
+            background: #f9fafb;
+        }
+        .status {
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 5px;
+            display: inline-block;
+            margin-left: 10px;
+        }
+        .status.pass {
+            background: #dcfce7;
+            color: #166534;
+        }
+        .status.fail {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .status.pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        button {
+            background: #16a34a;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #15803d;
+        }
+        #install-button {
+            display: none;
+        }
+        pre {
+            background: #1f2937;
+            color: #f3f4f6;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 PWA Feature Test - BTH Farmer Tracking</h1>
+        
+        <div class="test-item">
+            <strong>1. Service Worker Support</strong>
+            <span id="sw-support" class="status pending">กำลังตรวจสอบ...</span>
+            <p id="sw-info"></p>
+        </div>
+
+        <div class="test-item">
+            <strong>2. Service Worker Registration</strong>
+            <span id="sw-registration" class="status pending">กำลังตรวจสอบ...</span>
+            <p id="sw-reg-info"></p>
+        </div>
+
+        <div class="test-item">
+            <strong>3. Manifest File</strong>
+            <span id="manifest-check" class="status pending">กำลังตรวจสอบ...</span>
+            <p id="manifest-info"></p>
+        </div>
+
+        <div class="test-item">
+            <strong>4. App Install Status</strong>
+            <span id="install-status" class="status pending">กำลังตรวจสอบ...</span>
+            <p id="install-info"></p>
+            <button id="install-button">📲 ติดตั้งแอป</button>
+        </div>
+
+        <div class="test-item">
+            <strong>5. Cache Storage</strong>
+            <span id="cache-status" class="status pending">กำลังตรวจสอบ...</span>
+            <p id="cache-info"></p>
+        </div>
+
+        <h2>📋 Test Actions</h2>
+        <div class="test-item">
+            <button onclick="testOffline()">🔌 ทดสอบโหมดออฟไลน์</button>
+            <button onclick="clearCache()">🗑️ ล้างแคช</button>
+            <button onclick="unregisterSW()">❌ ยกเลิก Service Worker</button>
+            <button onclick="location.reload()">🔄 รีเฟรชหน้า</button>
+        </div>
+
+        <h2>📊 Detailed Information</h2>
+        <div class="test-item">
+            <button onclick="showDetails()">📖 แสดงรายละเอียด</button>
+            <pre id="details" style="display:none;"></pre>
+        </div>
+
+        <div style="margin-top: 30px; padding: 20px; background: #fef3c7; border-radius: 5px;">
+            <strong>ℹ️ หมายเหตุ:</strong>
+            <ul>
+                <li>PWA ทำงานได้เฉพาะบน HTTPS หรือ localhost</li>
+                <li>บางฟีเจอร์อาจไม่รองรับในบางเบราว์เซอร์</li>
+                <li>ควรทดสอบบนอุปกรณ์จริง (มือถือ) เพื่อผลลัพธ์ที่แม่นยำ</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let deferredPrompt;
+
+        // Test 1: Service Worker Support
+        if ('serviceWorker' in navigator) {
+            document.getElementById('sw-support').className = 'status pass';
+            document.getElementById('sw-support').textContent = '✅ รองรับ';
+            document.getElementById('sw-info').textContent = 'เบราว์เซอร์รองรับ Service Workers';
+        } else {
+            document.getElementById('sw-support').className = 'status fail';
+            document.getElementById('sw-support').textContent = '❌ ไม่รองรับ';
+            document.getElementById('sw-info').textContent = 'เบราว์เซอร์ไม่รองรับ Service Workers';
+        }
+
+        // Test 2: Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistration().then(registration => {
+                if (registration) {
+                    document.getElementById('sw-registration').className = 'status pass';
+                    document.getElementById('sw-registration').textContent = '✅ ลงทะเบียนแล้ว';
+                    document.getElementById('sw-reg-info').innerHTML = `
+                        <strong>Scope:</strong> ${registration.scope}<br>
+                        <strong>State:</strong> ${registration.active ? registration.active.state : 'N/A'}
+                    `;
+                } else {
+                    document.getElementById('sw-registration').className = 'status fail';
+                    document.getElementById('sw-registration').textContent = '❌ ยังไม่ได้ลงทะเบียน';
+                    document.getElementById('sw-reg-info').textContent = 'กรุณาเปิดหน้าหลัก (index.html) ก่อน';
+                }
+            });
+        }
+
+        // Test 3: Manifest Check
+        const manifestUrl = new URL('manifest.json', window.location.origin).href;
+        fetch(manifestUrl)
+            .then(response => {
+                if (response.ok) {
+                    document.getElementById('manifest-check').className = 'status pass';
+                    document.getElementById('manifest-check').textContent = '✅ พบไฟล์';
+                    return response.json();
+                } else {
+                    throw new Error('Manifest not found');
+                }
+            })
+            .then(manifest => {
+                document.getElementById('manifest-info').innerHTML = `
+                    <strong>ชื่อ:</strong> ${manifest.name}<br>
+                    <strong>Short Name:</strong> ${manifest.short_name}<br>
+                    <strong>Icons:</strong> ${manifest.icons.length} ไอคอน
+                `;
+            })
+            .catch(() => {
+                document.getElementById('manifest-check').className = 'status fail';
+                document.getElementById('manifest-check').textContent = '❌ ไม่พบไฟล์';
+                document.getElementById('manifest-info').textContent = 'ไม่พบไฟล์ manifest.json';
+            });
+
+        // Test 4: Install Status
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('install-button').style.display = 'inline-block';
+            document.getElementById('install-status').className = 'status pass';
+            document.getElementById('install-status').textContent = '✅ พร้อมติดตั้ง';
+            document.getElementById('install-info').textContent = 'แอปพร้อมติดตั้ง คลิกปุ่มด้านล่างเพื่อติดตั้ง';
+        });
+
+        // Check if already installed
+        if (window.matchMedia('(display-mode: standalone)').matches) {
+            document.getElementById('install-status').className = 'status pass';
+            document.getElementById('install-status').textContent = '✅ ติดตั้งแล้ว';
+            document.getElementById('install-info').textContent = 'แอปได้รับการติดตั้งแล้ว';
+        }
+
+        document.getElementById('install-button').addEventListener('click', async () => {
+            if (!deferredPrompt) {
+                alert('ไม่สามารถติดตั้งได้ในขณะนี้');
+                return;
+            }
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+                document.getElementById('install-info').textContent = 'ผู้ใช้ยอมรับการติดตั้ง';
+            } else {
+                document.getElementById('install-info').textContent = 'ผู้ใช้ยกเลิกการติดตั้ง';
+            }
+            deferredPrompt = null;
+        });
+
+        // Test 5: Cache Storage
+        if ('caches' in window) {
+            caches.keys().then(names => {
+                document.getElementById('cache-status').className = 'status pass';
+                document.getElementById('cache-status').textContent = '✅ พบแคช';
+                document.getElementById('cache-info').textContent = `พบแคช ${names.length} รายการ: ${names.join(', ') || 'ไม่มี'}`;
+            });
+        } else {
+            document.getElementById('cache-status').className = 'status fail';
+            document.getElementById('cache-status').textContent = '❌ ไม่รองรับ';
+        }
+
+        // Action functions
+        function testOffline() {
+            alert('กรุณาเปิด DevTools > Network > เลือก "Offline" แล้วรีเฟรชหน้าเพื่อทดสอบ');
+        }
+
+        function clearCache() {
+            if ('caches' in window) {
+                caches.keys().then(names => {
+                    Promise.all(names.map(name => caches.delete(name)))
+                        .then(() => {
+                            alert('ล้างแคชสำเร็จ!');
+                            location.reload();
+                        });
+                });
+            }
+        }
+
+        function unregisterSW() {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(registrations => {
+                    Promise.all(registrations.map(reg => reg.unregister()))
+                        .then(() => {
+                            alert('ยกเลิก Service Worker สำเร็จ!');
+                            location.reload();
+                        });
+                });
+            }
+        }
+
+        function showDetails() {
+            const details = document.getElementById('details');
+            if (details.style.display === 'none') {
+                const info = {
+                    userAgent: navigator.userAgent,
+                    serviceWorker: 'serviceWorker' in navigator,
+                    cacheStorage: 'caches' in window,
+                    displayMode: window.matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'browser',
+                    online: navigator.onLine,
+                    cookieEnabled: navigator.cookieEnabled,
+                    language: navigator.language,
+                    platform: navigator.platform,
+                    screenSize: `${screen.width}x${screen.height}`,
+                    viewportSize: `${window.innerWidth}x${window.innerHeight}`
+                };
+                details.textContent = JSON.stringify(info, null, 2);
+                details.style.display = 'block';
+            } else {
+                details.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+{
+  "name": "bth-farmer-tracking",
+  "version": "1.0.0",
+  "description": "ระบบบันทึกและติดตามข้อมูลเกษตรกร - Progressive Web App",
+  "main": "index.html",
+  "scripts": {
+    "generate-icons": "node generate-icons.js",
+    "serve": "npx serve .",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "keywords": [
+    "pwa",
+    "agriculture",
+    "farmer-tracking",
+    "thai",
+    "kratom",
+    "herb"
+  ],
+  "author": "บริษัท บ้านไทยเฮิร์บเซ็นเตอร์ จำกัด",
+  "private": true,
+  "dependencies": {
+    "sharp": "^0.34.5"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/RedMasaruz/BTH"
+  }
+}
