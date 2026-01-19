@@ -70,10 +70,13 @@ const MAX_INPUT_LENGTH = 5000;
 const MAX_REQUESTS_PER_HOUR = 100;
 const TOKEN_EXPIRY_MS = 86400000; // 24 hours
 const MAX_PHONE_LENGTH = 20;
+const MIN_PHONE_FALLBACK_LENGTH = 15;
 const MAX_TOKEN_LENGTH = 1000;
 const RATE_LIMIT_WINDOW_SECONDS = 3600;
 const MAX_SEARCH_QUERY_LENGTH = 100;
 const SEARCH_DEBOUNCE_MS = 300;
+const MAX_SPECIES_COUNT = 1000000;
+const MAX_SPECIES_NAME_LENGTH = 100;
 
 /* ========== HTML / UI Helpers ========== */
 function include(filename) {
@@ -272,12 +275,12 @@ function sanitizePhoneForSheet(phone) {
   const cleaned = s.replace(/\D/g, '');
   
   // Validate length (Thai numbers are typically 9-10 digits)
-  if (cleaned.length > 0 && cleaned.length < MAX_PHONE_LENGTH) {
+  if (cleaned.length > 0 && cleaned.length <= MAX_PHONE_LENGTH) {
     return cleaned;
   }
   
   Logger.log('Invalid phone number format: ' + s);
-  return cleaned.substring(0, 15); // Return truncated version
+  return cleaned.substring(0, MIN_PHONE_FALLBACK_LENGTH); // Return truncated version using constant
 }
 
 /**
@@ -639,17 +642,31 @@ function createUserAdminSheet() {
 
 function setupAdminUser() {
     // SECURITY WARNING: This function is for INITIAL SETUP ONLY!
-    // The password MUST be changed immediately after first use.
-    // DO NOT use this in production with the default password.
-    // Consider using Script Properties or environment variables for secure password management.
+    // 
+    // ⚠️ IMPORTANT SECURITY NOTES:
+    // 1. This default password MUST be changed immediately after first use
+    // 2. DO NOT use this function in production without changing the password
+    // 3. For production deployments, use PropertiesService to store passwords securely:
+    //    PropertiesService.getScriptProperties().setProperty('ADMIN_PASSWORD', 'your_secure_password')
+    // 4. Consider implementing a proper bootstrap/initialization flow
+    //
+    // Better approach for production:
+    // const password = PropertiesService.getScriptProperties().getProperty('ADMIN_INITIAL_PASSWORD');
+    // if (!password) throw new Error('ADMIN_INITIAL_PASSWORD not set in Script Properties');
     
     const DEFAULT_PASSWORD = 'CHANGE_ME_IMMEDIATELY';
     
     Logger.log('⚠️ WARNING: Using default admin password - MUST be changed!');
     const result = addAdminUser('admin', DEFAULT_PASSWORD, 'ผู้ดูแลระบบหลัก', 'admin@example.com', 'superadmin');
-    console.log('Setup result:', result);
-    console.warn('🔒 SECURITY: Change the admin password IMMEDIATELY using the admin panel!');
-    console.warn('📝 To set a secure password, use: addAdminUser("admin", "YOUR_SECURE_PASSWORD", ...)');
+    
+    if (result.success) {
+        console.warn('🔒 CRITICAL SECURITY NOTICE:');
+        console.warn('   1. Change the admin password IMMEDIATELY');
+        console.warn('   2. Use the admin panel or call: addAdminUser("admin", "YOUR_SECURE_PASSWORD", ...)');
+        console.warn('   3. For production, use Script Properties for password storage');
+        console.warn('   4. Delete this function after initial setup is complete');
+    }
+    
     return result;
 }
 
@@ -1187,9 +1204,9 @@ function buildSpeciesColumns(data) {
     
     Object.keys(group).forEach(varName => {
       const count = Number(group[varName]) || 0;
-      // Validate count is reasonable (not negative, not too large)
-      if (count > 0 && count <= 1000000) {
-        const safeName = String(varName).substring(0, 100); // Limit name length
+      // Validate count is reasonable using constant
+      if (count > 0 && count <= MAX_SPECIES_COUNT) {
+        const safeName = String(varName).substring(0, MAX_SPECIES_NAME_LENGTH); // Limit name length using constant
         details[stem].push(`${safeName}: ${count} ต้น`);
         totals[stem] += count;
       }
