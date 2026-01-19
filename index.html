@@ -1283,6 +1283,51 @@
         </div>
     </div>
 
+    <!-- Admin Login Modal สำหรับผู้ดูแลระบบ -->
+    <div id="admin-login" class="fixed inset-0 z-50 flex items-center justify-center hidden"
+        style="background: rgba(0, 0, 0, 0.6);">
+        <div class="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full mx-4"
+            style="border-top: 4px solid #0f766e;">
+            <div class="flex items-center justify-center mb-6">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-teal-600 mr-3" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor" stroke-width="1.8">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M12 11c2.21 0 4-1.79 4-4S14.21 3 12 3 8 4.79 8 7s1.79 4 4 4zM6 20a6 6 0 0112 0" />
+                </svg>
+                <h2 class="text-2xl font-bold text-stone-800">เข้าสู่ระบบผู้ดูแล</h2>
+            </div>
+            <form id="admin-login-form" onsubmit="handleAdminLogin(event)">
+                <div class="space-y-4">
+                    <div>
+                        <label for="admin-username" class="block text-sm font-medium mb-1 text-stone-700">Admin Username</label>
+                        <input type="text" id="admin-username" placeholder="admin username" required
+                            class="w-full p-3 border border-stone-300 rounded-lg focus:border-teal-600 focus:ring-2 focus:ring-teal-200">
+                    </div>
+                    <div>
+                        <label for="admin-password" class="block text-sm font-medium mb-1 text-stone-700">Admin Password</label>
+                        <input type="password" id="admin-password" placeholder="admin password" required
+                            class="w-full p-3 border border-stone-300 rounded-lg focus:border-teal-600 focus:ring-2 focus:ring-teal-200">
+                    </div>
+                    <div id="admin-login-error" class="text-red-500 text-sm hidden text-center"></div>
+
+                    <button id="admin-login-submit" type="submit" 
+                        class="w-full py-3 rounded-lg font-semibold text-white"
+                        style="background: linear-gradient(135deg, #0f766e 0%, #10b981 100%);">
+                        เข้าสู่ระบบ
+                    </button>
+                    <button type="button" onclick="hideAdminLoginModal()"
+                        class="w-full bg-stone-200 text-stone-700 py-3 rounded-lg font-semibold hover:bg-stone-300">
+                        ยกเลิก
+                    </button>
+                    <div class="text-center text-sm text-stone-600 mt-4">
+                        <p class="font-semibold text-teal-700">สำหรับผู้ดูแลระบบเท่านั้น</p>
+                        <p class="text-xs mt-1">หากลืมรหัสผ่าน ติดต่อ Super Admin</p>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Back Button -->
     <button id="back-button" onclick="goBack()"
         class="fixed top-4 left-4 px-4 py-2 rounded-full bg-white shadow-lg z-10 hidden" title="กลับหน้าหลัก">
@@ -4892,6 +4937,110 @@
             if (err) err.classList.add('hidden');
         }
 
+        // =============================================
+        // ADMIN LOGIN FUNCTIONS (INDEPENDENT)
+        // =============================================
+        async function handleAdminLogin(event) {
+            event.preventDefault();
+
+            const username = document.getElementById('admin-username')?.value.trim();
+            const password = document.getElementById('admin-password')?.value;
+            const errorElement = document.getElementById('admin-login-error');
+            const submitButton = event.target.querySelector('button[type="submit"]');
+
+            if (!username || !password) {
+                const errorMessage = "กรุณากรอก Admin Username และ Password";
+                if (errorElement) {
+                    errorElement.textContent = errorMessage;
+                    errorElement.classList.remove('hidden');
+                } else {
+                    showMessageBox("❌ ข้อมูลไม่ครบ", errorMessage);
+                }
+                return;
+            }
+
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<div class="loading-spinner"></div> กำลังตรวจสอบ...';
+
+            if (errorElement) {
+                errorElement.classList.add('hidden');
+            }
+
+            try {
+                const response = await new Promise((resolve, reject) => {
+                    google.script.run
+                        .withSuccessHandler(resolve)
+                        .withFailureHandler(reject)
+                        .userLogin(username, password);
+                });
+
+                if (response && response.success) {
+                    console.log('✅ Admin login successful:', response);
+
+                    // Verify this is actually an admin user
+                    if (!response.isAdmin) {
+                        const errorMessage = "บัญชีนี้ไม่มีสิทธิ์ผู้ดูแลระบบ";
+                        if (errorElement) {
+                            errorElement.textContent = errorMessage;
+                            errorElement.classList.remove('hidden');
+                        } else {
+                            showMessageBox("❌ ไม่มีสิทธิ์", errorMessage);
+                        }
+                        return;
+                    }
+                    
+                    // Store admin session data
+                    sessionStorage.setItem('sessionToken', response.token);
+                    sessionStorage.setItem('longName', response.longName);
+                    sessionStorage.setItem('username', response.username);
+                    sessionStorage.setItem('isAdmin', 'true');
+
+                    hideAdminLoginModal();
+
+                    // Navigate to admin view
+                    adminCheckAuthAndInit();
+
+                    showMessageBox("✅ เข้าสู่ระบบผู้ดูแลสำเร็จ", `ยินดีต้อนรับ ${response.username}`);
+                } else {
+                    const errorMessage = (response && response.message) || "Admin Username หรือ Password ไม่ถูกต้อง";
+                    if (errorElement) {
+                        errorElement.textContent = errorMessage;
+                        errorElement.classList.remove('hidden');
+                    } else {
+                        showMessageBox("❌ ล็อกอินไม่สำเร็จ", errorMessage);
+                    }
+                }
+            } catch (error) {
+                console.error('❌ ข้อผิดพลาดในการล็อกอินผู้ดูแล:', error);
+                const errorMessage = "เกิดข้อผิดพลาดในการเชื่อมต่อระบบ";
+                if (errorElement) {
+                    errorElement.textContent = errorMessage;
+                    errorElement.classList.remove('hidden');
+                } else {
+                    showMessageBox("❌ ข้อผิดพลาดระบบ", errorMessage);
+                }
+            } finally {
+                submitButton.disabled = false;
+                submitButton.innerHTML = 'เข้าสู่ระบบ';
+            }
+        }
+
+        function showAdminLoginModal() {
+            const el = document.getElementById('admin-login');
+            if (el) el.classList.remove('hidden');
+            const input = document.getElementById('admin-username');
+            if (input) input.focus();
+        }
+
+        function hideAdminLoginModal() {
+            const modal = document.getElementById('admin-login');
+            if (modal) modal.classList.add('hidden');
+            const form = document.getElementById('admin-login-form');
+            if (form) form.reset();
+            const err = document.getElementById('admin-login-error');
+            if (err) err.classList.add('hidden');
+        }
+
         function checkLoginStatus() {
 
             const token = sessionStorage.getItem('sessionToken');
@@ -6989,7 +7138,7 @@
                 if (!isAdminSession()) {
                     if (warning) warning.classList.remove('hidden');
                     if (controls) controls.classList.add('hidden');
-                    if (typeof showLoginModal === 'function') showLoginModal();
+                    if (typeof showAdminLoginModal === 'function') showAdminLoginModal();
                     return;
                 }
 
@@ -7558,6 +7707,9 @@
         window.showLoginModal = showLoginModal;
         window.hideLoginModal = hideLoginModal;
         window.handleLogin = handleLogin;
+        window.showAdminLoginModal = showAdminLoginModal;
+        window.hideAdminLoginModal = hideAdminLoginModal;
+        window.handleAdminLogin = handleAdminLogin;
         window.checkAuthAndShowSubmenu = checkAuthAndShowSubmenu;
         window.logout = logout;
         window.toggleOtherWateringInput = toggleOtherWateringInput;
