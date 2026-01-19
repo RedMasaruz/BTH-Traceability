@@ -3488,8 +3488,8 @@
                 updateSheetALongDropdown();
             }
 
-            // Update long dropdowns for Sheet B views when user is logged in
-            if (viewId === 'sheet-b-view' || viewId === 'sheet-b-use-view') {
+            // Update long dropdowns for Sheet B view when user is logged in
+            if (viewId === 'sheet-b-view') {
                 console.log(`📋 Showing ${viewId}, checking login status...`);
                 const currentUser = checkLoginStatus();
                 if (currentUser && currentUser.longName) {
@@ -3498,6 +3498,16 @@
                 } else {
                     console.log('❌ No user logged in or no longName');
                 }
+            }
+            
+            // For sheet-b-use-view, optionally auto-select if user is logged in, but don't require it
+            if (viewId === 'sheet-b-use-view') {
+                const currentUser = checkLoginStatus();
+                if (currentUser && currentUser.longName) {
+                    console.log(`✅ User logged in as ${currentUser.longName}, auto-selecting dropdown`);
+                    updateAllLongDropdowns(currentUser.longName);
+                }
+                // No error message if not logged in - this is allowed
             }
 
             updateBackButton(viewId);
