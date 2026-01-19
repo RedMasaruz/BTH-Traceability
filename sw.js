@@ -13,7 +13,13 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('[Service Worker] Caching app shell');
-        return cache.addAll(urlsToCache);
+        // Use addAll with error handling for individual files
+        return Promise.allSettled(
+          urlsToCache.map(url => cache.add(url).catch(err => {
+            console.warn('[Service Worker] Failed to cache:', url, err);
+            return null;
+          }))
+        );
       })
       .then(() => {
         console.log('[Service Worker] Skip waiting');
@@ -36,6 +42,7 @@ self.addEventListener('activate', (event) => {
             console.log('[Service Worker] Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
+          return Promise.resolve();
         })
       );
     }).then(() => {
@@ -68,9 +75,13 @@ self.addEventListener('fetch', (event) => {
         // Clone the response
         const responseToCache = response.clone();
 
+        // Cache the response asynchronously (don't await)
         caches.open(CACHE_NAME)
           .then((cache) => {
             cache.put(event.request, responseToCache);
+          })
+          .catch((error) => {
+            console.warn('[Service Worker] Failed to cache response:', error);
           });
 
         return response;

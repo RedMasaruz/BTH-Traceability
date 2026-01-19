@@ -6895,30 +6895,47 @@
             };
 
             // ---------- Search/filter ----------
+            let searchDebounceTimer = null;
             window.adminFilterTable = function () {
-                try {
-                    const q = (document.getElementById('admin-search-input')?.value || '').trim().toLowerCase();
-                    if (!q) {
-                        displayTable(lastFetchedData);
-                        return;
-                    }
-                    const filtered = lastFetchedData.filter(row => {
-                        try {
-                            return Object.values(row).some(v => {
-                                if (v === null || v === undefined) return false;
-                                if (typeof v === 'object') {
-                                    try { v = JSON.stringify(v); } catch (e) { v = String(v); }
-                                }
-                                return String(v).toLowerCase().includes(q);
-                            });
-                        } catch (e) {
-                            return false;
-                        }
-                    });
-                    displayTable(filtered);
-                } catch (e) {
-                    console.error('adminFilterTable error:', e);
+                // Clear previous timer
+                if (searchDebounceTimer) {
+                    clearTimeout(searchDebounceTimer);
                 }
+                
+                // Debounce search by 300ms
+                searchDebounceTimer = setTimeout(() => {
+                    try {
+                        const q = (document.getElementById('admin-search-input')?.value || '').trim().toLowerCase();
+                        if (!q) {
+                            displayTable(lastFetchedData);
+                            return;
+                        }
+                        
+                        // Validate search query length
+                        if (q.length > 100) {
+                            console.warn('Search query too long, truncating');
+                            document.getElementById('admin-search-input').value = q.substring(0, 100);
+                            return;
+                        }
+                        
+                        const filtered = lastFetchedData.filter(row => {
+                            try {
+                                return Object.values(row).some(v => {
+                                    if (v === null || v === undefined) return false;
+                                    if (typeof v === 'object') {
+                                        try { v = JSON.stringify(v); } catch (e) { v = String(v); }
+                                    }
+                                    return String(v).toLowerCase().includes(q);
+                                });
+                            } catch (e) {
+                                return false;
+                            }
+                        });
+                        displayTable(filtered);
+                    } catch (e) {
+                        console.error('adminFilterTable error:', e);
+                    }
+                }, 300);
             };
 
             // ---------- Admin actions (fetch) ----------
