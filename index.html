@@ -3292,9 +3292,14 @@
         ];
 
         // Timing constants for consistent delays across the application
-        const DROPDOWN_SELECT_DELAY_MS = 50;  // Delay after populate before auto-select
-        const DROPDOWN_RETRY_DELAY_MS = 100;   // Delay for retry attempts
-        const DOM_READY_DELAY_MS = 100;        // Delay for DOM to be fully ready
+        const DROPDOWN_SELECT_DELAY_MS = 50;         // Delay after populate before auto-select
+        const DROPDOWN_RETRY_DELAY_MS = 100;         // Delay between retry attempts
+        const DROPDOWN_RETRY_TOTAL_DELAY_MS = 200;   // Total delay for full retry sequence
+        const DOM_READY_DELAY_MS = 100;              // Delay for DOM to be fully ready
+        
+        // Partial matching constants
+        const MIN_NAME_LENGTH_FOR_PARTIAL_MATCH = 6; // Minimum chars in normalized name to attempt partial matching
+                                                      // Prevents matching generic prefixes like "ตัวแทน"
 
         /**
          * Normalize longName for backward compatibility
@@ -3593,9 +3598,9 @@
 
             console.log(`🔄 populateLongOptions: Found ${selectElements.length} dropdown(s) to populate`);
 
-            // LONG_OPTIONS is always defined as a const, no need for typeof check
+            // Validate LONG_OPTIONS structure (it's defined as const but we check runtime structure)
             if (!Array.isArray(LONG_OPTIONS) || LONG_OPTIONS.length === 0) {
-                console.error('❌ populateLongOptions: LONG_OPTIONS is empty');
+                console.error('❌ populateLongOptions: LONG_OPTIONS is empty or invalid structure');
                 return false;
             }
 
@@ -4820,11 +4825,11 @@
                         
                         if (!populated) {
                             console.warn('⚠️ Dropdown population failed, retrying...');
-                            // Single setTimeout with combined delay for retry
+                            // Single setTimeout with total delay for retry
                             setTimeout(() => {
                                 populateLongOptions();
                                 updateAllLongDropdowns(response.longName);
-                            }, DROPDOWN_RETRY_DELAY_MS * 2);  // 200ms total delay for retry
+                            }, DROPDOWN_RETRY_TOTAL_DELAY_MS);
                         } else {
                             // Success - small delay for DOM rendering before auto-select
                             setTimeout(() => {
@@ -5189,9 +5194,9 @@
                     }
                 }
                 
-                // Improved fallback: Only use partial match if normalized contains full word boundary
-                // This prevents false positives like matching "ตัวแทน" to every option
-                if (!found && normalizedLong.length > 6) {  // Only for specific names, not generic prefixes
+                // Improved fallback: Partial matching with safeguards against false positives
+                // Only use partial match if the normalized name is specific enough (longer than generic prefix)
+                if (!found && normalizedLong.length > MIN_NAME_LENGTH_FOR_PARTIAL_MATCH) {
                     console.warn(`  ⚠️ NO EXACT MATCH for "${normalizedLong}" in ${selector}, trying partial...`);
                     
                     for (let i = 0; i < element.options.length; i++) {
@@ -5199,7 +5204,8 @@
                         // Skip empty values
                         if (!optionValue || optionValue === "") continue;
                         
-                        // Check if the option contains the normalized value (but not vice versa to avoid matching generic prefixes)
+                        // One-way matching: check if option contains normalized
+                        // This avoids false positives from generic prefixes like "ตัวแทน"
                         if (optionValue.includes(normalizedLong)) {
                             console.log(`  🔧 Found partial match at index ${i}: "${optionValue}"`);
                             element.selectedIndex = i;
