@@ -1286,8 +1286,7 @@
     <!-- Admin Login Modal สำหรับผู้ดูแลระบบ -->
     <div id="admin-login" class="fixed inset-0 z-50 flex items-center justify-center hidden"
         style="background: rgba(0, 0, 0, 0.6);">
-        <div class="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full mx-4"
-            style="border-top: 4px solid #0f766e;">
+        <div class="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full mx-4 border-t-4 border-teal-700">
             <div class="flex items-center justify-center mb-6">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-teal-600 mr-3" fill="none" viewBox="0 0 24 24"
                     stroke="currentColor" stroke-width="1.8">
@@ -4993,12 +4992,16 @@
                     sessionStorage.setItem('sessionToken', response.token);
                     sessionStorage.setItem('longName', response.longName);
                     sessionStorage.setItem('username', response.username);
-                    sessionStorage.setItem('isAdmin', 'true');
+                    sessionStorage.setItem('isAdmin', response.isAdmin ? 'true' : 'false');
 
                     hideAdminLoginModal();
 
-                    // Navigate to admin view
-                    adminCheckAuthAndInit();
+                    // Navigate directly to admin view
+                    const warning = document.getElementById('admin-access-warning');
+                    const controls = document.getElementById('admin-controls');
+                    if (warning) warning.classList.add('hidden');
+                    if (controls) controls.classList.remove('hidden');
+                    if (typeof navigateTo === 'function') navigateTo('admin-view');
 
                     showMessageBox("✅ เข้าสู่ระบบผู้ดูแลสำเร็จ", `ยินดีต้อนรับ ${response.username}`);
                 } else {
