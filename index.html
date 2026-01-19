@@ -1401,7 +1401,7 @@
                 </div>
 
                 <!-- Card 3: Usage Report 4-7-16 -->
-                <div id="card-sheet-b-use" class="portal-card-enhanced" onclick="checkAuthAndShowSheetBUse()"
+                <div id="card-sheet-b-use" class="portal-card-enhanced" onclick="showView('sheet-b-use-view')"
                     style="--card-index: 3;">
                     <div class="card-glow"></div>
                     <div class="card-icon-wrapper">
@@ -4950,31 +4950,6 @@
 
             } else {
                 console.log('❌ User not authenticated, showing login modal');
-                showLoginModal();
-            }
-        }
-
-        function checkAuthAndShowSheetBUse() {
-            console.log('🔐 checkAuthAndShowSheetBUse called');
-            const currentUser = checkLoginStatus();
-
-            if (currentUser) {
-                console.log(`✅ User authenticated: ${currentUser.longName}`);
-                showView('sheet-b-use-view');
-                
-                // Ensure dropdowns are populated before auto-selecting
-                console.log('🔄 Ensuring dropdowns are populated...');
-                populateLongOptions();
-                
-                // Small delay to ensure DOM rendering, then auto-select
-                setTimeout(() => {
-                    console.log('🔄 Auto-selecting dropdowns for sheet-b-use-view...');
-                    updateAllLongDropdowns(currentUser.longName);
-                }, DROPDOWN_SELECT_DELAY_MS);
-
-            } else {
-                console.log('❌ User not authenticated, showing login modal');
-                showMessageBox("🔐 จำเป็นต้องล็อกอิน", "กรุณาล็อกอินเป็นตัวแทนก่อนเข้าใช้งานฟอร์มนี้");
                 showLoginModal();
             }
         }
