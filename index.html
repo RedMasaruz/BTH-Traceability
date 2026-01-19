@@ -3264,6 +3264,9 @@
         const isGitHubPages = window.location.hostname.includes('github.io');
         const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbwlLPesLd6v2S93WX4myU6MM81Nc-ZqYO6NqOMLd1wga7RlOzvFNCmnWFCLReQHdgNh/exec';
 
+        // =============================================
+        // CONSTANTS
+        // =============================================
         const LONG_OPTIONS = [
             { value: "", text: "--- เลือกตัวแทนที่สังกัด ---" },
             { value: "ตัวแทนพี่บาสBDS", text: "ตัวแทนพี่บาสBDS" },
@@ -3287,6 +3290,11 @@
             { value: "ตัวแทนพี่วิทย์วิสาหกิจชุมชนชาววัง", text: "ตัวแทนพี่วิทย์วิสาหกิจชุมชนชาววัง" },
             { value: "ตัวแทนพี่สาโรจน์", text: "ตัวแทนพี่สาโรจน์" },
         ];
+
+        // Timing constants for consistent delays across the application
+        const DROPDOWN_SELECT_DELAY_MS = 50;  // Delay after populate before auto-select
+        const DROPDOWN_RETRY_DELAY_MS = 100;   // Delay for retry attempts
+        const DOM_READY_DELAY_MS = 100;        // Delay for DOM to be fully ready
 
         /**
          * Normalize longName for backward compatibility
@@ -3585,9 +3593,9 @@
 
             console.log(`🔄 populateLongOptions: Found ${selectElements.length} dropdown(s) to populate`);
 
-            // Verify LONG_OPTIONS is available
-            if (typeof LONG_OPTIONS === 'undefined' || !Array.isArray(LONG_OPTIONS) || LONG_OPTIONS.length === 0) {
-                console.error('❌ populateLongOptions: LONG_OPTIONS not available or empty');
+            // LONG_OPTIONS is always defined as a const, no need for typeof check
+            if (!Array.isArray(LONG_OPTIONS) || LONG_OPTIONS.length === 0) {
+                console.error('❌ populateLongOptions: LONG_OPTIONS is empty');
                 return false;
             }
 
@@ -4812,19 +4820,17 @@
                         
                         if (!populated) {
                             console.warn('⚠️ Dropdown population failed, retrying...');
-                            // Small delay and retry
+                            // Single setTimeout with combined delay for retry
                             setTimeout(() => {
                                 populateLongOptions();
-                                setTimeout(() => {
-                                    updateAllLongDropdowns(response.longName);
-                                }, 100);
-                            }, 100);
+                                updateAllLongDropdowns(response.longName);
+                            }, DROPDOWN_RETRY_DELAY_MS * 2);  // 200ms total delay for retry
                         } else {
-                            // Small delay to ensure DOM is ready
+                            // Success - small delay for DOM rendering before auto-select
                             setTimeout(() => {
                                 console.log('🔄 Dropdowns populated, now auto-selecting...');
                                 updateAllLongDropdowns(response.longName);
-                            }, 50);
+                            }, DROPDOWN_SELECT_DELAY_MS);
                         }
                         
                         showView('submenu-view');
@@ -4924,7 +4930,7 @@
                 setTimeout(() => {
                     console.log('🔄 Auto-selecting dropdowns...');
                     updateAllLongDropdowns(currentUser.longName);
-                }, 50);
+                }, DROPDOWN_SELECT_DELAY_MS);
                 
                 const header = document.querySelector('#submenu-view header');
                 if (header) {
@@ -5139,9 +5145,9 @@
                         element.remove(0);
                     }
                     
-                    // Populate with LONG_OPTIONS
-                    if (typeof LONG_OPTIONS === 'undefined' || !Array.isArray(LONG_OPTIONS)) {
-                        console.error(`  ❌ LONG_OPTIONS not available for ${selector}`);
+                    // Populate with LONG_OPTIONS (always defined as const, no typeof check needed)
+                    if (!Array.isArray(LONG_OPTIONS) || LONG_OPTIONS.length === 0) {
+                        console.error(`  ❌ LONG_OPTIONS is empty for ${selector}`);
                         failureCount++;
                         return;
                     }
@@ -5161,7 +5167,7 @@
                 
                 console.log(`  🔍 Checking dropdown: ${selector}, options count: ${element.options.length}`);
                 
-                // Try to find and select the matching option
+                // Try to find and select the matching option (exact match first)
                 let found = false;
                 for (let i = 0; i < element.options.length; i++) {
                     const optionValue = element.options[i].value;
@@ -5183,15 +5189,18 @@
                     }
                 }
                 
-                if (!found) {
-                    console.warn(`  ⚠️ NO MATCH found for "${normalizedLong}" in ${selector}`);
-                    console.warn(`  Available options:`, Array.from(element.options).map(o => `"${o.value}"`));
-                    failureCount++;
+                // Improved fallback: Only use partial match if normalized contains full word boundary
+                // This prevents false positives like matching "ตัวแทน" to every option
+                if (!found && normalizedLong.length > 6) {  // Only for specific names, not generic prefixes
+                    console.warn(`  ⚠️ NO EXACT MATCH for "${normalizedLong}" in ${selector}, trying partial...`);
                     
-                    // Try fallback: check if there's a partial match
                     for (let i = 0; i < element.options.length; i++) {
                         const optionValue = element.options[i].value;
-                        if (optionValue.includes(normalizedLong) || normalizedLong.includes(optionValue)) {
+                        // Skip empty values
+                        if (!optionValue || optionValue === "") continue;
+                        
+                        // Check if the option contains the normalized value (but not vice versa to avoid matching generic prefixes)
+                        if (optionValue.includes(normalizedLong)) {
                             console.log(`  🔧 Found partial match at index ${i}: "${optionValue}"`);
                             element.selectedIndex = i;
                             
@@ -5206,8 +5215,14 @@
                         }
                     }
                 }
+                
+                if (!found) {
+                    console.warn(`  ❌ NO MATCH found (exact or partial) for "${normalizedLong}" in ${selector}`);
+                    console.warn(`  Available options:`, Array.from(element.options).map(o => `"${o.value}"`));
+                    failureCount++;
+                }
 
-                // Lock the dropdown after selection
+                // Lock the dropdown after selection (or attempted selection)
                 element.disabled = true;
                 element.classList.add('bg-gray-100', 'cursor-not-allowed');
             });
@@ -7462,7 +7477,7 @@
                         console.log('🔄 Auto-selecting dropdowns for logged-in user...');
                         updateAllLongDropdowns(currentUser.longName);
                         updateSheetALongDropdown();
-                    }, 100);
+                    }, DOM_READY_DELAY_MS);
                 } else {
                     console.log('ℹ️ No active user session');
                 }
