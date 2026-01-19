@@ -3570,32 +3570,60 @@
         }
 
         function populateLongOptions() {
+            console.log('🔄 populateLongOptions: Starting dropdown population...');
+            
             const selectA = document.getElementById('a-long-affiliation');
             const selectB = document.getElementById('b-long-affiliation');
             const selectBUse = document.getElementById('b-long-affiliation-use');
 
             const selectElements = [selectA, selectB, selectBUse].filter(el => el !== null);
 
-            console.log('🔄 กำลังโหลด dropdowns:', selectElements.length, 'ตัว');
+            if (selectElements.length === 0) {
+                console.error('❌ populateLongOptions: No dropdown elements found!');
+                return false;
+            }
 
+            console.log(`🔄 populateLongOptions: Found ${selectElements.length} dropdown(s) to populate`);
+
+            // Verify LONG_OPTIONS is available
+            if (typeof LONG_OPTIONS === 'undefined' || !Array.isArray(LONG_OPTIONS) || LONG_OPTIONS.length === 0) {
+                console.error('❌ populateLongOptions: LONG_OPTIONS not available or empty');
+                return false;
+            }
+
+            let successCount = 0;
             selectElements.forEach(selectEl => {
-                while (selectEl.options.length > 0) {
-                    selectEl.remove(0);
-                }
+                try {
+                    const elementId = selectEl.id;
+                    
+                    // Clear existing options
+                    while (selectEl.options.length > 0) {
+                        selectEl.remove(0);
+                    }
 
-                LONG_OPTIONS.forEach(option => {
-                    const opt = document.createElement('option');
-                    opt.value = option.value;
-                    opt.textContent = option.text;
-                    selectEl.appendChild(opt);
-                });
+                    // Populate with LONG_OPTIONS
+                    LONG_OPTIONS.forEach(option => {
+                        const opt = document.createElement('option');
+                        opt.value = option.value;
+                        opt.textContent = option.text;
+                        selectEl.appendChild(opt);
+                    });
 
-                if (selectEl.options.length > 0) {
-                    selectEl.options[0].disabled = true;
-                    selectEl.options[0].selected = true;
+                    // Set first option as disabled placeholder
+                    if (selectEl.options.length > 0) {
+                        selectEl.options[0].disabled = true;
+                        selectEl.options[0].selected = true;
+                    }
+                    
+                    successCount++;
+                    console.log(`✅ populateLongOptions: Populated ${elementId} with ${selectEl.options.length} options`);
+                } catch (e) {
+                    console.error(`❌ populateLongOptions: Failed to populate ${selectEl.id}:`, e);
                 }
-                console.log('✅ โหลด dropdown สำเร็จ:', selectEl.id);
             });
+            
+            console.log(`📊 populateLongOptions: ${successCount}/${selectElements.length} dropdowns populated successfully`);
+            return successCount === selectElements.length;
         }
 
         // =============================================
@@ -3957,21 +3985,52 @@
             const currentUser = checkLoginStatus();
             const longSelect = document.getElementById('a-long-affiliation');
 
-            if (currentUser && longSelect) {
-                // Normalize longName for backward compatibility
-                const normalizedLongName = normalizeLongName(currentUser.longName);
-                
-                for (let i = 0; i < longSelect.options.length; i++) {
-                    if (longSelect.options[i].value === normalizedLongName) {
-                        longSelect.selectedIndex = i;
-                        longSelect.disabled = true;
-                        longSelect.classList.add('bg-gray-100', 'cursor-not-allowed');
-                        break;
-                    }
-                }
-
-                updateLongDropdownLabels(true);
+            if (!currentUser) {
+                console.log('⚠️ updateSheetALongDropdown: No current user');
+                return;
             }
+
+            if (!longSelect) {
+                console.error('❌ updateSheetALongDropdown: dropdown element not found');
+                return;
+            }
+
+            // Ensure dropdown is populated
+            if (longSelect.options.length === 0) {
+                console.log('⚠️ updateSheetALongDropdown: dropdown empty, calling populateLongOptions');
+                populateLongOptions();
+            }
+
+            // Normalize longName for backward compatibility
+            const normalizedLongName = normalizeLongName(currentUser.longName);
+            console.log(`🔍 updateSheetALongDropdown: Looking for "${normalizedLongName}"`);
+            
+            let found = false;
+            for (let i = 0; i < longSelect.options.length; i++) {
+                if (longSelect.options[i].value === normalizedLongName) {
+                    longSelect.selectedIndex = i;
+                    longSelect.disabled = true;
+                    longSelect.classList.add('bg-gray-100', 'cursor-not-allowed');
+                    found = true;
+                    console.log(`✅ updateSheetALongDropdown: Auto-selected at index ${i}`);
+                    
+                    // Trigger change event
+                    try {
+                        const event = new Event('change', { bubbles: true });
+                        longSelect.dispatchEvent(event);
+                    } catch (e) {
+                        console.warn('⚠️ Could not dispatch change event:', e);
+                    }
+                    break;
+                }
+            }
+
+            if (!found) {
+                console.warn(`⚠️ updateSheetALongDropdown: No match for "${normalizedLongName}"`);
+                console.warn('Available options:', Array.from(longSelect.options).map(o => `"${o.value}"`));
+            }
+
+            updateLongDropdownLabels(true);
         }
 
         // =============================================
@@ -4731,6 +4790,9 @@
                 });
 
                 if (response && response.success) {
+                    console.log('✅ Login successful:', response);
+                    
+                    // Store session data
                     sessionStorage.setItem('sessionToken', response.token);
                     sessionStorage.setItem('longName', response.longName);
                     sessionStorage.setItem('username', response.username);
@@ -4739,11 +4801,33 @@
                     hideLoginModal();
 
                     if (response.isAdmin) {
-                        // ถ้าเป็น admin ให้เปิดหน้า admin
+                        // Admin users go to admin panel
                         adminCheckAuthAndInit();
                     } else {
+                        // CRITICAL FIX: Ensure dropdowns are populated BEFORE auto-selecting
+                        console.log('🔄 Populating dropdowns before auto-select...');
+                        
+                        // Force populate all dropdowns
+                        const populated = populateLongOptions();
+                        
+                        if (!populated) {
+                            console.warn('⚠️ Dropdown population failed, retrying...');
+                            // Small delay and retry
+                            setTimeout(() => {
+                                populateLongOptions();
+                                setTimeout(() => {
+                                    updateAllLongDropdowns(response.longName);
+                                }, 100);
+                            }, 100);
+                        } else {
+                            // Small delay to ensure DOM is ready
+                            setTimeout(() => {
+                                console.log('🔄 Dropdowns populated, now auto-selecting...');
+                                updateAllLongDropdowns(response.longName);
+                            }, 50);
+                        }
+                        
                         showView('submenu-view');
-                        updateAllLongDropdowns(response.longName);
                     }
 
                     showMessageBox("✅ ล็อกอินสำเร็จ", `ยินดีต้อนรับ ${response.longName}`);
@@ -4831,8 +4915,17 @@
             if (currentUser) {
                 console.log(`✅ User authenticated: ${currentUser.longName}`);
                 showView('submenu-view');
-                // Update all long dropdowns when navigating to submenu
-                updateAllLongDropdowns(currentUser.longName);
+                
+                // CRITICAL FIX: Ensure dropdowns are populated before auto-selecting
+                console.log('🔄 Ensuring dropdowns are populated...');
+                populateLongOptions();
+                
+                // Small delay to ensure DOM rendering, then auto-select
+                setTimeout(() => {
+                    console.log('🔄 Auto-selecting dropdowns...');
+                    updateAllLongDropdowns(currentUser.longName);
+                }, 50);
+                
                 const header = document.querySelector('#submenu-view header');
                 if (header) {
                     // ensure we don't append duplicates
@@ -5011,8 +5104,14 @@
         function updateAllLongDropdowns(selectedLong) {
             console.log('🔄 updateAllLongDropdowns called with:', selectedLong);
             
+            if (!selectedLong) {
+                console.warn('⚠️ updateAllLongDropdowns called with empty selectedLong');
+                return;
+            }
+            
             // Normalize the selectedLong for backward compatibility
             const normalizedLong = normalizeLongName(selectedLong);
+            console.log('🔄 Normalized long name:', normalizedLong);
             
             const longSelectors = [
                 'a-long-affiliation',
@@ -5020,48 +5119,110 @@
                 'b-long-affiliation-use'
             ];
 
+            let successCount = 0;
+            let failureCount = 0;
+
             longSelectors.forEach(selector => {
                 const element = document.getElementById(selector);
-                if (element) {
-                    // If dropdown is empty, populate it first
-                    if (element.options.length === 0) {
-                        console.log(`  ⚠️ Dropdown ${selector} is empty, populating...`);
-                        LONG_OPTIONS.forEach(option => {
-                            const opt = document.createElement('option');
-                            opt.value = option.value;
-                            opt.textContent = option.text;
-                            if (option.value === "") {
-                                opt.disabled = true;
-                                opt.selected = true;
-                            }
-                            element.appendChild(opt);
-                        });
+                if (!element) {
+                    console.log(`  ❌ Element not found: ${selector}`);
+                    failureCount++;
+                    return;
+                }
+
+                // CRITICAL FIX: Ensure dropdown is populated before attempting auto-select
+                if (element.options.length === 0 || element.options.length === 1) {
+                    console.log(`  ⚠️ Dropdown ${selector} is empty or has only placeholder, populating...`);
+                    
+                    // Clear existing options
+                    while (element.options.length > 0) {
+                        element.remove(0);
                     }
                     
-                    console.log(`  Checking dropdown: ${selector}, options count: ${element.options.length}`);
+                    // Populate with LONG_OPTIONS
+                    if (typeof LONG_OPTIONS === 'undefined' || !Array.isArray(LONG_OPTIONS)) {
+                        console.error(`  ❌ LONG_OPTIONS not available for ${selector}`);
+                        failureCount++;
+                        return;
+                    }
                     
-                    let found = false;
+                    LONG_OPTIONS.forEach(option => {
+                        const opt = document.createElement('option');
+                        opt.value = option.value;
+                        opt.textContent = option.text;
+                        if (option.value === "") {
+                            opt.disabled = true;
+                        }
+                        element.appendChild(opt);
+                    });
+                    
+                    console.log(`  ✅ Populated ${selector} with ${element.options.length} options`);
+                }
+                
+                console.log(`  🔍 Checking dropdown: ${selector}, options count: ${element.options.length}`);
+                
+                // Try to find and select the matching option
+                let found = false;
+                for (let i = 0; i < element.options.length; i++) {
+                    const optionValue = element.options[i].value;
+                    if (optionValue === normalizedLong) {
+                        element.selectedIndex = i;
+                        found = true;
+                        console.log(`  ✅ AUTO-SELECTED at index ${i} for ${selector}: "${optionValue}"`);
+                        
+                        // Trigger change event to ensure any listeners are notified
+                        try {
+                            const event = new Event('change', { bubbles: true });
+                            element.dispatchEvent(event);
+                        } catch (e) {
+                            console.warn('  ⚠️ Could not dispatch change event:', e);
+                        }
+                        
+                        successCount++;
+                        break;
+                    }
+                }
+                
+                if (!found) {
+                    console.warn(`  ⚠️ NO MATCH found for "${normalizedLong}" in ${selector}`);
+                    console.warn(`  Available options:`, Array.from(element.options).map(o => `"${o.value}"`));
+                    failureCount++;
+                    
+                    // Try fallback: check if there's a partial match
                     for (let i = 0; i < element.options.length; i++) {
-                        if (element.options[i].value === normalizedLong) {
+                        const optionValue = element.options[i].value;
+                        if (optionValue.includes(normalizedLong) || normalizedLong.includes(optionValue)) {
+                            console.log(`  🔧 Found partial match at index ${i}: "${optionValue}"`);
                             element.selectedIndex = i;
+                            
+                            try {
+                                const event = new Event('change', { bubbles: true });
+                                element.dispatchEvent(event);
+                            } catch (e) {}
+                            
+                            successCount++;
                             found = true;
-                            console.log(`  ✅ Matched at index ${i} for ${selector}`);
                             break;
                         }
                     }
-                    
-                    if (!found && element.options.length > 0) {
-                        console.log(`  ⚠️ No match found for "${normalizedLong}" in ${selector}`);
-                        console.log(`  Available options:`, Array.from(element.options).map(o => o.value));
-                    }
-
-                    element.disabled = true;
-                    element.classList.add('bg-gray-100', 'cursor-not-allowed');
-                } else {
-                    console.log(`  ❌ Element not found: ${selector}`);
                 }
+
+                // Lock the dropdown after selection
+                element.disabled = true;
+                element.classList.add('bg-gray-100', 'cursor-not-allowed');
             });
+            
             updateLongDropdownLabels(true);
+            
+            // Summary log
+            console.log(`📊 Dropdown update summary: ${successCount} succeeded, ${failureCount} failed`);
+            
+            // Show user feedback if there were failures
+            if (failureCount > 0 && successCount === 0) {
+                console.error('❌ All dropdown updates failed! User data may not match available options.');
+                // Optional: show a subtle notification to user (uncomment if desired)
+                // showMessageBox('⚠️ Notice', 'Some dropdowns could not be auto-selected. Please verify your selections.');
+            }
         }
 
         function resetLongDropdowns() {
@@ -7275,19 +7436,38 @@
         window.onload = () => {
             try {
                 console.log('🚀 Starting system initialization...');
-                populateLongOptions();
+                
+                // Step 1: Populate all dropdowns first
+                console.log('Step 1: Populating dropdowns...');
+                const populateSuccess = populateLongOptions();
+                
+                if (!populateSuccess) {
+                    console.warn('⚠️ Initial dropdown population had issues, will retry on user interaction');
+                }
+                
+                // Step 2: Initialize other components
+                console.log('Step 2: Initializing components...');
                 showView('main-menu-view');
                 initializeFertilizerCheckboxes();
 
+                // Step 3: Check if user already logged in
+                console.log('Step 3: Checking login status...');
                 const currentUser = checkLoginStatus();
+                
                 if (currentUser) {
                     console.log('✅ User already logged in:', currentUser.longName);
-                    updateAllLongDropdowns(currentUser.longName);
-                    updateSheetALongDropdown();
+                    
+                    // Give dropdowns a moment to render, then auto-select
+                    setTimeout(() => {
+                        console.log('🔄 Auto-selecting dropdowns for logged-in user...');
+                        updateAllLongDropdowns(currentUser.longName);
+                        updateSheetALongDropdown();
+                    }, 100);
                 } else {
                     console.log('ℹ️ No active user session');
                 }
 
+                // Step 4: Check GAS environment
                 isAppsScriptReady('Initialization');
 
                 console.log('✅ ระบบโหลดเสร็จสิ้น');
