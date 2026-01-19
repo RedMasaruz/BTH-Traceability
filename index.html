@@ -1248,7 +1248,7 @@
 
 <body class="p-4 md:p-8">
 
-    <!-- Login Modal สำหรับล้ง -->
+    <!-- Login Modal สำหรับตัวแทน -->
     <div id="login-modal" class="fixed inset-0 z-50 flex items-center justify-center hidden"
         style="background: rgba(0, 0, 0, 0.5);">
         <div class="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full mx-4">
@@ -1340,11 +1340,8 @@
                 <h1 class="text-3xl font-extrabold text-stone-800 mb-3">
                     ระบบบันทึกและติดตามข้อมูลเกษตรกร
                 </h1>
-                <p class="text-lg text-stone-600 mb-2">
-                    (บันทึกผล)
-                </p>
                 <p class="text-sm text-gray-500">
-                    🚀 เลือกเมนูที่ต้องการเพื่อเริ่มต้นใช้งานระบบ
+                    เลือกเมนูที่ต้องการเพื่อเริ่มต้นใช้งานระบบ
                 </p>
                 <div class="flex justify-center space-x-4 mt-4">
                     <div class="flex items-center">
@@ -1492,17 +1489,7 @@
                                             อำเภอ เกาะจันทร์ จังหวัด ชลบุรี 20240</p>
                                         <p class="mb-2 text-xs md:text-sm">
                                             ช่องทางติดต่อ:
-                                            <a href="https://line.me/ti/p/LV4OFl3dcU" target="_blank"
-                                                class="btn btn-success fw-bold mx-1 inline-flex items-center gap-1 text-xs md:text-sm px-2 py-1 md:px-3 md:py-2 bg-green-600 text-white font-semibold rounded">
-                                                <i class="bi bi-qr-code"></i> <span class="hidden sm:inline">กดเพื่อสแกน
-                                                    QR
-                                                    เพิ่มเพื่อน และแชทผ่าน LINE</span><span
-                                                    class="sm:hidden">LINE</span>
-                                            </a>
-                                            | <a href="tel:0924579929"
-                                                class="text-green-600 font-semibold">092-4579929</a>
-                                            | <a href="tel:0635033042"
-                                                class="text-green-600 font-semibold">063-5033042</a>
+                                            <a href="tel:0924579929" class="text-green-600 font-semibold">092-4579929</a> | <a href="tel:0635033042" class="text-green-600 font-semibold">063-5033042</a>
                                         </p>
                                     </div>
                                     <img src="https://i.postimg.cc/rsL6ZK4T/image.jpg" alt="BTH Logo"
@@ -1832,7 +1819,7 @@
                                         </h3>
                                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
 
-                                            <!-- ฤดูแล้ง -->
+                                            <!-- ฤดูแตัวแทน -->
                                             <div>
                                                 <label
                                                     class="form-label block font-bold mb-1 text-stone-800">ช่วงฤดูแล้ง</label>
@@ -2396,7 +2383,7 @@
                                 d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                         </svg>
                     </div>
-                    <h2 class="text-xl font-bold text-stone-800 mb-2">ติดตั้งและจัดการการส่งออกล้ง (กำลังแก้ไข)</h2>
+                    <h2 class="text-xl font-bold text-stone-800 mb-2">ติดตั้งและจัดการการส่งออกตัวแทน (กำลังแก้ไข)</h2>
                     <p class="text-sm text-stone-600"></p>
                 </div>
 
@@ -2766,7 +2753,7 @@
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <p><strong>ชื่อ-สกุล:</strong> <span data-field="a-fullname">---</span></p>
                                 <p><strong>รหัสเกษตรกร:</strong> <span data-field="a-id">---</span></p>
-                                <p><strong>สังกัดล้ง:</strong> <span data-field="a-long-affiliation">---</span></p>
+                                <p><strong>สังกัดตัวแทน:</strong> <span data-field="a-long-affiliation">---</span></p>
                             </div>
                         </div>
 
@@ -3065,7 +3052,7 @@
                 <div class="flex flex-col md:flex-row gap-4 items-center">
                     <div class="flex-grow">
                         <p class="text-sm text-stone-600" id="auto-long-name">
-                            <!-- แสดงชื่อล้งอัตโนมัติ -->
+                            <!-- แสดงชื่อตัวแทนอัตโนมัติ -->
                         </p>
                     </div>
                     <div>
@@ -3123,7 +3110,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round"
                         d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <p>ไม่พบข้อมูลเกษตรกรสำหรับล้งนี้</p>
+                <p>ไม่พบข้อมูลเกษตรกรสำหรับตัวแทนนี้</p>
             </div>
         </div>
 
@@ -3163,7 +3150,7 @@
                     onclick="showSection('admin-kratom', this)">ดูข้อมูลทั้งหมด</button>
 
                 <button class="nav-tab" data-target="admin-lounge" data-section-color="blue"
-                    onclick="showSection('admin-lounge', this)">2. คู่มือสำหรับล้ง</button>
+                    onclick="showSection('admin-lounge', this)">2. คู่มือสำหรับตัวแทน</button>
             </nav>
 
             <div id="admin-kratom" class="content-section active">
@@ -3259,9 +3246,9 @@
             </div>
 
             <div id="admin-lounge" class="content-section hidden">
-                <h2>คู่มือสำหรับล้ง</h2>
+                <h2>คู่มือสำหรับตัวแทน</h2>
                 <div class="p-4 bg-white border rounded">
-                    <p class="text-sm text-stone-600">คู่มือ / คำแนะนำสำหรับผู้ใช้งานล้ง (Placeholder)</p>
+                    <p class="text-sm text-stone-600">คู่มือ / คำแนะนำสำหรับผู้ใช้งานตัวแทน (Placeholder)</p>
                 </div>
             </div>
         </div>
@@ -3300,6 +3287,23 @@
             { value: "ตัวแทนพี่วิทย์วิสาหกิจชุมชนชาววัง", text: "ตัวแทนพี่วิทย์วิสาหกิจชุมชนชาววัง" },
             { value: "ตัวแทนพี่สาโรจน์", text: "ตัวแทนพี่สาโรจน์" },
         ];
+
+        /**
+         * Normalize longName for backward compatibility
+         * Converts "ล้ง" prefix to "ตัวแทน" prefix
+         */
+        function normalizeLongName(longName) {
+            if (!longName) return longName;
+            
+            // If it starts with "ล้ง", replace with "ตัวแทน"
+            if (longName.startsWith('ล้ง')) {
+                const normalized = longName.replace(/^ล้ง/, 'ตัวแทน');
+                console.log(`🔄 Normalized "${longName}" → "${normalized}"`);
+                return normalized;
+            }
+            
+            return longName;
+        }
 
         if (isGitHubPages && typeof google === 'undefined') {
             // Create mock google.script.run for GitHub Pages
@@ -3471,6 +3475,18 @@
                 updateSheetALongDropdown();
             }
 
+            // Update long dropdowns for Sheet B views when user is logged in
+            if (viewId === 'sheet-b-view' || viewId === 'sheet-b-use-view') {
+                console.log(`📋 Showing ${viewId}, checking login status...`);
+                const currentUser = checkLoginStatus();
+                if (currentUser && currentUser.longName) {
+                    console.log(`✅ User logged in: ${currentUser.longName}`);
+                    updateAllLongDropdowns(currentUser.longName);
+                } else {
+                    console.log('❌ No user logged in or no longName');
+                }
+            }
+
             updateBackButton(viewId);
 
             previousView = currentView;
@@ -3511,7 +3527,7 @@
             const autoLongElement = document.getElementById('auto-long-name');
 
             if (currentUser && autoLongElement) {
-                autoLongElement.textContent = `ล้ง: ${currentUser.longName}`;
+                autoLongElement.textContent = `ตัวแทน: ${currentUser.longName}`;
 
                 document.getElementById('summary-data-container').classList.add('hidden');
                 document.getElementById('summary-empty').classList.add('hidden');
@@ -3942,8 +3958,11 @@
             const longSelect = document.getElementById('a-long-affiliation');
 
             if (currentUser && longSelect) {
+                // Normalize longName for backward compatibility
+                const normalizedLongName = normalizeLongName(currentUser.longName);
+                
                 for (let i = 0; i < longSelect.options.length; i++) {
-                    if (longSelect.options[i].value === currentUser.longName) {
+                    if (longSelect.options[i].value === normalizedLongName) {
                         longSelect.selectedIndex = i;
                         longSelect.disabled = true;
                         longSelect.classList.add('bg-gray-100', 'cursor-not-allowed');
@@ -3966,7 +3985,7 @@
 
 
             if (!longAffiliation || !farmerId) {
-                showMessageBox("❌ ขาดข้อมูล!", "กรุณาเลือกล้งและป้อนรหัสเกษตรกร");
+                showMessageBox("❌ ขาดข้อมูล!", "กรุณาเลือกตัวแทนและป้อนรหัสเกษตรกร");
                 return;
             }
 
@@ -4054,7 +4073,7 @@
                         fetchButton.innerHTML = `ค้นหา`;
                     }
                     console.error('❌ createNewSheetForLong failed', error);
-                    showMessageBox("❌ ข้อผิดพลาด!", (error && error.message) || 'ไม่สามารถเตรียม Sheet สำหรับล้งนี้ได้');
+                    showMessageBox("❌ ข้อผิดพลาด!", (error && error.message) || 'ไม่สามารถเตรียม Sheet สำหรับตัวแทนนี้ได้');
                 })
                 .createNewSheetForLong(longAffiliation);
         }
@@ -4102,7 +4121,7 @@
             const farmerId = document.getElementById('summary-search-id') ? document.getElementById('summary-search-id').value.trim() : '';
 
             if (!longAffiliation || !farmerId) {
-                showMessageBox("❌ ขาดข้อมูล!", "กรุณาเลือกล้งและป้อนรหัสเกษตรกร");
+                showMessageBox("❌ ขาดข้อมูล!", "กรุณาเลือกตัวแทนและป้อนรหัสเกษตรกร");
                 return;
             }
 
@@ -4379,7 +4398,7 @@
                 const fullname = document.getElementById('b-fullname-use')?.value.trim();
 
                 if (!longAffiliation) {
-                    showMessageBox("❌ ขาดข้อมูล!", "กรุณาเลือกล้งที่สังกัด");
+                    showMessageBox("❌ ขาดข้อมูล!", "กรุณาเลือกตัวแทนที่สังกัด");
                     return;
                 }
 
@@ -4660,7 +4679,7 @@
                             showMessageBox("❌ ข้อผิดพลาด",
                                 `ไม่สามารถบันทึกข้อมูลได้: ${result && result.message ? result.message : 'ความสัมพันธ์ข้อมูลไม่ถูกต้อง'}
                                  <br><br>กรุณาตรวจสอบว่า:
-                                 <br>• ดูแลล้งได้บันทึกข้อมูลการรับแร่/นาโนของเกษตรกรหรือยัง
+                                 <br>• ดูแลตัวแทนได้บันทึกข้อมูลการรับแร่/นาโนของเกษตรกรหรือยัง
                                  <br>• รหัสเกษตรกรถูกต้องไหม
                                  <br>• เลือกตัวแทนที่สังกัดถูกต้องไหม`);
                             resolve(false);
@@ -4686,7 +4705,7 @@
             const submitButton = event.target.querySelector('button[type="submit"]');
 
             if (!username || !password) {
-                const errorMessage = "กรุณากรอกชื่อล้งและรหัสผ่าน";
+                const errorMessage = "กรุณากรอกชื่อตัวแทนและรหัสผ่าน";
                 if (errorElement) {
                     errorElement.textContent = errorMessage;
                     errorElement.classList.remove('hidden');
@@ -4729,7 +4748,7 @@
 
                     showMessageBox("✅ ล็อกอินสำเร็จ", `ยินดีต้อนรับ ${response.longName}`);
                 } else {
-                    const errorMessage = (response && response.message) || "ชื่อล้งหรือรหัสผ่านไม่ถูกต้อง";
+                    const errorMessage = (response && response.message) || "ชื่อตัวแทนหรือรหัสผ่านไม่ถูกต้อง";
                     if (errorElement) {
                         errorElement.textContent = errorMessage;
                         errorElement.classList.remove('hidden');
@@ -4806,10 +4825,14 @@
         }
 
         function checkAuthAndShowSubmenu() {
+            console.log('🔐 checkAuthAndShowSubmenu called');
             const currentUser = checkLoginStatus();
 
             if (currentUser) {
+                console.log(`✅ User authenticated: ${currentUser.longName}`);
                 showView('submenu-view');
+                // Update all long dropdowns when navigating to submenu
+                updateAllLongDropdowns(currentUser.longName);
                 const header = document.querySelector('#submenu-view header');
                 if (header) {
                     // ensure we don't append duplicates
@@ -4822,6 +4845,7 @@
                 }
 
             } else {
+                console.log('❌ User not authenticated, showing login modal');
                 showLoginModal();
             }
         }
@@ -4912,7 +4936,7 @@
             const emptyElement = document.getElementById('summary-empty');
 
             if (countElement) {
-                countElement.textContent = `พบข้อมูลเกษตรกรทั้งหมด ${farmers.length} รายการในล้ง ${selectedLong}`;
+                countElement.textContent = `พบข้อมูลเกษตรกรทั้งหมด ${farmers.length} รายการในตัวแทน ${selectedLong}`;
                 countElement.className = 'text-sm text-green-600 font-semibold';
             }
 
@@ -4955,7 +4979,7 @@
             if (dataContainer) dataContainer.classList.add('hidden');
             if (emptyElement) emptyElement.classList.remove('hidden');
             if (countElement) {
-                countElement.textContent = `ไม่พบข้อมูลเกษตรกรในล้ง ${selectedLong}`;
+                countElement.textContent = `ไม่พบข้อมูลเกษตรกรในตัวแทน ${selectedLong}`;
                 countElement.className = 'text-sm text-red-600 font-semibold';
             }
         }
@@ -4985,6 +5009,11 @@
         // DROPDOWN MANAGEMENT
         // =============================================
         function updateAllLongDropdowns(selectedLong) {
+            console.log('🔄 updateAllLongDropdowns called with:', selectedLong);
+            
+            // Normalize the selectedLong for backward compatibility
+            const normalizedLong = normalizeLongName(selectedLong);
+            
             const longSelectors = [
                 'a-long-affiliation',
                 'b-long-affiliation',
@@ -4994,15 +5023,42 @@
             longSelectors.forEach(selector => {
                 const element = document.getElementById(selector);
                 if (element) {
+                    // If dropdown is empty, populate it first
+                    if (element.options.length === 0) {
+                        console.log(`  ⚠️ Dropdown ${selector} is empty, populating...`);
+                        LONG_OPTIONS.forEach(option => {
+                            const opt = document.createElement('option');
+                            opt.value = option.value;
+                            opt.textContent = option.text;
+                            if (option.value === "") {
+                                opt.disabled = true;
+                                opt.selected = true;
+                            }
+                            element.appendChild(opt);
+                        });
+                    }
+                    
+                    console.log(`  Checking dropdown: ${selector}, options count: ${element.options.length}`);
+                    
+                    let found = false;
                     for (let i = 0; i < element.options.length; i++) {
-                        if (element.options[i].value === selectedLong) {
+                        if (element.options[i].value === normalizedLong) {
                             element.selectedIndex = i;
+                            found = true;
+                            console.log(`  ✅ Matched at index ${i} for ${selector}`);
                             break;
                         }
+                    }
+                    
+                    if (!found && element.options.length > 0) {
+                        console.log(`  ⚠️ No match found for "${normalizedLong}" in ${selector}`);
+                        console.log(`  Available options:`, Array.from(element.options).map(o => o.value));
                     }
 
                     element.disabled = true;
                     element.classList.add('bg-gray-100', 'cursor-not-allowed');
+                } else {
+                    console.log(`  ❌ Element not found: ${selector}`);
                 }
             });
             updateLongDropdownLabels(true);
@@ -5037,10 +5093,10 @@
                     const autoLabel = document.getElementById('auto-selected-label');
 
                     if (isAutoSelected) {
-                        label.textContent = 'ล้งที่เกษตรกรสังกัด *';
+                        label.textContent = 'ตัวแทนที่เกษตรกรสังกัด *';
                         if (autoLabel) autoLabel.classList.remove('hidden');
                     } else {
-                        label.textContent = 'กรุณาเลือกล้ง';
+                        label.textContent = 'กรุณาเลือกตัวแทน';
                         if (autoLabel) autoLabel.classList.add('hidden');
                     }
                 }
@@ -7195,14 +7251,18 @@
         // =============================================
         window.onload = () => {
             try {
+                console.log('🚀 Starting system initialization...');
                 populateLongOptions();
                 showView('main-menu-view');
                 initializeFertilizerCheckboxes();
 
                 const currentUser = checkLoginStatus();
                 if (currentUser) {
+                    console.log('✅ User already logged in:', currentUser.longName);
                     updateAllLongDropdowns(currentUser.longName);
                     updateSheetALongDropdown();
+                } else {
+                    console.log('ℹ️ No active user session');
                 }
 
                 isAppsScriptReady('Initialization');
