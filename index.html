@@ -6790,7 +6790,7 @@
                 if (!isAdminSession()) {
                     if (warning) warning.classList.remove('hidden');
                     if (controls) controls.classList.add('hidden');
-                    if (typeof showLoginModal === 'function') showLoginModal();
+                    if (typeof showAdminLoginModal === 'function') showAdminLoginModal();
                     return;
                 }
 
