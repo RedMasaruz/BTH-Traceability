@@ -6985,8 +6985,7 @@
                 SEARCH_DEBOUNCE_MS: 300,
                 MAX_SAFE_EXPORT_ROWS: 5000,
                 MAX_LOGIN_ATTEMPTS: 5,
-                LOGIN_ATTEMPT_WINDOW_MS: 300000, // 5 minutes
-                DEBUG_FETCH_TIMEOUT_MS: 30000 // 30 seconds timeout for debug operations
+                LOGIN_ATTEMPT_WINDOW_MS: 300000 // 5 minutes
             };
             
             // state
@@ -7411,164 +7410,6 @@
                 showLoading(flag);
             }
 
-            /**
-             * Creates HTML template for displaying debug information.
-             * @param {string} resultDisplay - Pre-escaped JSON result string
-             * @returns {string} HTML template string
-             * @security Parameter MUST be HTML-escaped before calling this function
-             */
-            function createDebugInfoTemplate(resultDisplay) {
-                return `<pre style="white-space:pre-wrap; max-height:400px; overflow-y:auto; font-family:monospace; font-size:12px;">${resultDisplay}</pre>`;
-            }
-            
-            /**
-             * Creates HTML template for displaying debug error messages.
-             * @param {string} contextDisplay - Pre-escaped context description
-             * @param {string} errorMsg - Pre-escaped error message
-             * @returns {string} HTML template string
-             * @security Both parameters MUST be HTML-escaped before calling this function
-             */
-            function createDebugErrorTemplate(contextDisplay, errorMsg) {
-                return `<div>
-                    <p><strong>Context:</strong> ${contextDisplay}</p>
-                    <p><strong>Error:</strong> ${errorMsg}</p>
-                    <p style="margin-top:10px; font-size:0.9em; color:#666;">
-                        This debug operation failed. Please check:
-                        <ul style="margin:5px 0; padding-left:20px;">
-                            <li>Your authentication token is valid</li>
-                            <li>You have admin permissions</li>
-                            <li>The backend function getAllFarmersDebug exists</li>
-                            <li>The spreadsheet is accessible</li>
-                        </ul>
-                    </p>
-                </div>`;
-            }
-            
-            /**
-             * Creates HTML template for displaying debug exceptions.
-             * @param {string} errorMsg - Pre-escaped error message
-             * @returns {string} HTML template string
-             * @security Parameter MUST be HTML-escaped before calling this function
-             */
-            function createDebugExceptionTemplate(errorMsg) {
-                return `<div>
-                    <p>An unexpected error occurred while initiating debug operation:</p>
-                    <pre style="background:#f5f5f5; padding:10px; margin-top:10px; border-radius:4px; overflow-x:auto;">${errorMsg}</pre>
-                </div>`;
-            }
-            
-            // Debug helper to fetch and display admin debug info
-            function fetchAndShowAdminDebug(token, context) {
-                if (!token) {
-                    console.warn('fetchAndShowAdminDebug: no token provided');
-                    if (typeof showMessageBox === 'function') {
-                        showMessageBox('⚠️ Debug Warning', 'No authentication token provided for debug operation');
-                    }
-                    return;
-                }
-                
-                try {
-                    console.log('fetchAndShowAdminDebug called with context:', context);
-                    
-                    // Check if Google Apps Script API is available
-                    if (typeof google === 'undefined' || !google.script || !google.script.run) {
-                        console.error('fetchAndShowAdminDebug: google.script.run not available');
-                        if (typeof showMessageBox === 'function') {
-                            showMessageBox('❌ Environment Error', 'Google Apps Script API is not available. This debug function only works in the deployed web app environment.');
-                        }
-                        return;
-                    }
-                    
-                    // Track completion state to prevent race conditions
-                    let operationCompleted = false;
-                    
-                    // Set timeout for debug operation using CONFIG constant
-                    // Set before enabling loading state to ensure proper order
-                    const debugTimeout = setTimeout(() => {
-                        // Only execute timeout handler if operation hasn't completed
-                        if (!operationCompleted) {
-                            console.warn('fetchAndShowAdminDebug: operation timed out');
-                            operationCompleted = true;
-                            setAdminControlsDisabled(false);
-                            showLoading(false);
-                            if (typeof showMessageBox === 'function') {
-                                showMessageBox('⏱️ Debug Timeout', 'Debug operation took too long and was cancelled. Please try again.');
-                            }
-                        }
-                    }, CONFIG.DEBUG_FETCH_TIMEOUT_MS);
-                    
-                    // Set loading state after timeout is configured
-                    setAdminControlsDisabled(true);
-                    showLoading(true);
-                    
-                    google.script.run
-                        .withSuccessHandler(result => {
-                            // Mark operation as completed and cleanup
-                            if (!operationCompleted) {
-                                operationCompleted = true;
-                                clearTimeout(debugTimeout);
-                                setAdminControlsDisabled(false);
-                                showLoading(false);
-                                
-                                console.log('Debug info fetched successfully:', result);
-                                
-                                // Display debug information
-                                if (typeof showMessageBox === 'function') {
-                                    const contextDisplay = escapeHtml(context || 'Debug Info');
-                                    const resultDisplay = escapeHtml(JSON.stringify(result, null, 2));
-                                    const template = createDebugInfoTemplate(resultDisplay);
-                                    showMessageBox('🔍 Debug Info - ' + contextDisplay, template);
-                                } else {
-                                    // Fallback to console if showMessageBox is not available
-                                    console.log('=== DEBUG INFO ===');
-                                    console.log('Context:', context);
-                                    console.log('Result:', result);
-                                    alert('Debug info logged to console (F12)');
-                                }
-                            }
-                        })
-                        .withFailureHandler(err => {
-                            // Mark operation as completed and cleanup
-                            if (!operationCompleted) {
-                                operationCompleted = true;
-                                clearTimeout(debugTimeout);
-                                setAdminControlsDisabled(false);
-                                showLoading(false);
-                                
-                                console.error('fetchAndShowAdminDebug failed:', err);
-                                
-                                // Display detailed error information
-                                const errorMsg = (err && err.message) ? err.message : 'Unknown error';
-                                if (typeof showMessageBox === 'function') {
-                                    const contextDisplay = escapeHtml(context || 'N/A');
-                                    const escapedError = escapeHtml(errorMsg);
-                                    const template = createDebugErrorTemplate(contextDisplay, escapedError);
-                                    showMessageBox('❌ Debug Fetch Failed', template);
-                                } else {
-                                    alert('Debug fetch failed: ' + errorMsg);
-                                }
-                            }
-                        })
-                        .getAllFarmersDebug(token);
-                        
-                } catch (e) {
-                    // Handle synchronous exceptions
-                    console.error('fetchAndShowAdminDebug exception:', e);
-                    setAdminControlsDisabled(false);
-                    showLoading(false);
-                    
-                    // Use safe error message to avoid exposing internal error objects
-                    const errorMsg = (e && e.message) ? e.message : 'An unexpected error occurred';
-                    if (typeof showMessageBox === 'function') {
-                        const escapedError = escapeHtml(errorMsg);
-                        const template = createDebugExceptionTemplate(escapedError);
-                        showMessageBox('❌ Debug Exception', template);
-                    } else {
-                        alert('Debug exception: An unexpected error occurred');
-                    }
-                }
-            };
-            
 
             window.adminFetchAllFarmers = function () {
                 if (!isAdminSession()) {
@@ -7637,7 +7478,6 @@
                         .withFailureHandler(err => {
                             setFetching(false);
                             console.error('=== adminFetchAllFarmers FAILURE ===', err);
-                            fetchAndShowAdminDebug(token, 'getAllFarmers failed (failureHandler)');
                             if (typeof showMessageBox === 'function') showMessageBox('❌ ดึงข้อมูลล้มเหลว', escapeHtml((err && err.message) || 'ไม่สามารถดึงข้อมูลจาก Backend ได้'));
                         })
                         .getAllFarmers(token);
@@ -7677,7 +7517,7 @@
                             console.log('getAllUsage result:', result);
 
                             if (result === null || typeof result === 'undefined') {
-                                fetchAndShowAdminDebug(token, 'getAllUsage returned null/undefined');
+                                if (typeof showMessageBox === 'function') showMessageBox('❌ ไม่มีผลลัพธ์', 'getAllUsage คืนค่าเป็น null/undefined');
                                 return;
                             }
                             try {
@@ -7695,7 +7535,6 @@
                         .withFailureHandler(err => {
                             setFetching(false);
                             console.error('adminFetchAllUsage failed', err);
-                            fetchAndShowAdminDebug(token, 'getAllUsage failed (failureHandler)');
                             if (typeof showMessageBox === 'function') showMessageBox('❌ ดึงข้อมูลล้มเหลว', escapeHtml((err && err.message) || 'ไม่สามารถดึงข้อมูลจาก Backend ได้'));
                         })
                         .getAllUsage(token);
@@ -7734,7 +7573,7 @@
                             console.log('getAllMerged result:', result);
 
                             if (result === null || typeof result === 'undefined') {
-                                fetchAndShowAdminDebug(token, 'getAllMerged returned null/undefined');
+                                if (typeof showMessageBox === 'function') showMessageBox('❌ ไม่มีผลลัพธ์', 'getAllMerged คืนค่าเป็น null/undefined');
                                 return;
                             }
 
@@ -7753,7 +7592,6 @@
                         .withFailureHandler(err => {
                             setFetching(false);
                             console.error('adminFetchMerged failed', err);
-                            fetchAndShowAdminDebug(token, 'getAllMerged failed (failureHandler)');
                             if (typeof showMessageBox === 'function') showMessageBox('❌ ดึงข้อมูลล้มเหลว', escapeHtml((err && err.message) || 'ไม่สามารถดึงข้อมูลจาก Backend ได้'));
                         })
                         .getAllMerged(token);
