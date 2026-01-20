@@ -6985,7 +6985,8 @@
                 SEARCH_DEBOUNCE_MS: 300,
                 MAX_SAFE_EXPORT_ROWS: 5000,
                 MAX_LOGIN_ATTEMPTS: 5,
-                LOGIN_ATTEMPT_WINDOW_MS: 300000 // 5 minutes
+                LOGIN_ATTEMPT_WINDOW_MS: 300000, // 5 minutes
+                DEBUG_FETCH_TIMEOUT_MS: 30000 // 30 seconds timeout for debug operations
             };
             
             // state
@@ -7410,7 +7411,13 @@
                 showLoading(flag);
             }
 
-            // HTML template helpers for fetchAndShowAdminDebug
+            /**
+             * Creates HTML template for displaying debug information.
+             * @param {string} contextDisplay - Pre-escaped context description
+             * @param {string} resultDisplay - Pre-escaped JSON result string
+             * @returns {string} HTML template string
+             * @security Both parameters MUST be HTML-escaped before calling this function
+             */
             function createDebugInfoTemplate(contextDisplay, resultDisplay) {
                 // Both inputs must already be escaped
                 return '<pre style="white-space:pre-wrap; max-height:400px; overflow-y:auto; font-family:monospace; font-size:12px;">' + 
@@ -7418,6 +7425,13 @@
                        '</pre>';
             }
             
+            /**
+             * Creates HTML template for displaying debug error messages.
+             * @param {string} contextDisplay - Pre-escaped context description
+             * @param {string} errorMsg - Pre-escaped error message
+             * @returns {string} HTML template string
+             * @security Both parameters MUST be HTML-escaped before calling this function
+             */
             function createDebugErrorTemplate(contextDisplay, errorMsg) {
                 // Both inputs must already be escaped
                 return '<div>' +
@@ -7435,6 +7449,12 @@
                        '</div>';
             }
             
+            /**
+             * Creates HTML template for displaying debug exceptions.
+             * @param {string} errorMsg - Pre-escaped error message
+             * @returns {string} HTML template string
+             * @security Parameter MUST be HTML-escaped before calling this function
+             */
             function createDebugExceptionTemplate(errorMsg) {
                 // Input must already be escaped
                 return '<div>' +
@@ -7471,7 +7491,7 @@
                     setAdminControlsDisabled(true);
                     showLoading(true);
                     
-                    // Set timeout for debug operation (30 seconds)
+                    // Set timeout for debug operation using CONFIG constant
                     const debugTimeout = setTimeout(() => {
                         console.warn('fetchAndShowAdminDebug: operation timed out');
                         setAdminControlsDisabled(false);
@@ -7479,7 +7499,7 @@
                         if (typeof showMessageBox === 'function') {
                             showMessageBox('⏱️ Debug Timeout', 'Debug operation took too long and was cancelled. Please try again.');
                         }
-                    }, 30000);
+                    }, CONFIG.DEBUG_FETCH_TIMEOUT_MS);
                     
                     google.script.run
                         .withSuccessHandler(result => {
@@ -7529,13 +7549,14 @@
                     setAdminControlsDisabled(false);
                     showLoading(false);
                     
-                    const errorMsg = (e && e.message) ? e.message : String(e);
+                    // Use safe error message to avoid exposing internal error objects
+                    const errorMsg = (e && e.message) ? e.message : 'An unexpected error occurred';
                     if (typeof showMessageBox === 'function') {
                         const escapedError = escapeHtml(errorMsg);
                         const template = createDebugExceptionTemplate(escapedError);
                         showMessageBox('❌ Debug Exception', template);
                     } else {
-                        alert('Debug exception: ' + errorMsg);
+                        alert('Debug exception: An unexpected error occurred');
                     }
                 }
             };
