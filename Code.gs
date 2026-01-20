@@ -594,12 +594,10 @@ function isAdminUsername(username, password) {
       }
     }
 
-    // 3) Check hardcoded admin usernames
-    const adminUsernames = ['admin', 'administrator', 'superadmin', 'root'];
-    if (adminUsernames.includes(u.toLowerCase())) {
-      console.log('Found in hardcoded admin list');
-      return true;
-    }
+    // SECURITY FIX: Removed hardcoded admin usernames list  
+    // Admin users must be explicitly defined in UserAdmin sheet or have admin role in Users sheet
+    // Migration: If you previously relied on hardcoded usernames ('admin', 'administrator', 'superadmin', 'root'),
+    // you must add these users to the UserAdmin sheet with proper passwords
 
     console.log('User not found in any admin source');
     return false;
@@ -1063,7 +1061,50 @@ function searchSheetBData(longAffiliation, farmerId) {
  * - If stored password is plaintext and matches, migrate stored value to hashed form.
  */
 function userLogin(username, password) {
+  const startTime = Date.now(); // Track timing to prevent enumeration
+  
   try {
+    // Input validation and sanitization
+    if (!username || typeof username !== 'string') {
+      Utilities.sleep(Math.max(300 - (Date.now() - startTime), 0));
+      return { success: false, message: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' };
+    }
+    
+    // Sanitize username: remove control characters, null bytes, zero-width spaces
+    username = String(username)
+      .replace(/\x00/g, '')  // Remove null bytes
+      .replace(/[\x00-\x1F\x7F]/g, '')  // Remove control characters
+      .replace(/[\u200B-\u200D\uFEFF]/g, '')  // Remove zero-width spaces
+      .trim();
+    
+    // Validate username format (alphanumeric, Thai, underscore, dash, dot)
+    if (!/^[a-zA-Z0-9._\u0E00-\u0E7F-]+$/.test(username)) {
+      Utilities.sleep(Math.max(300 - (Date.now() - startTime), 0));
+      logAction('login_failed', username, { reason: 'invalid_format' });
+      return { success: false, message: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' };
+    }
+    
+    // Check password validity
+    if (!password || typeof password !== 'string' || password.length === 0) {
+      Utilities.sleep(Math.max(300 - (Date.now() - startTime), 0));
+      return { success: false, message: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' };
+    }
+    
+    // Server-side rate limiting using CacheService
+    const cache = CacheService.getScriptCache();
+    const rateLimitKey = `login_attempts_${username}`;
+    const attempts = parseInt(cache.get(rateLimitKey) || '0');
+    
+    // Block if too many attempts (5 attempts per 5 minutes)
+    if (attempts >= 5) {
+      logAction('login_rate_limited', username, { attempts: attempts });
+      Utilities.sleep(5000); // 5 second penalty
+      return { success: false, message: 'คุณพยายามเข้าสู่ระบบหลายครั้งเกินไป กรุณารออีก 5 นาที' };
+    }
+    
+    // Increment attempt counter (expires after 5 minutes = 300 seconds)
+    cache.put(rateLimitKey, String(attempts + 1), 300);
+    
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID_A);
 
     // --------- 1) Check UserAdmin sheet (admin users) ----------
@@ -1087,6 +1128,10 @@ function userLogin(username, password) {
                 if (storedPass === providedHash) {
                   const longName = longNameIndex !== -1 ? String(row[longNameIndex] || '').trim() : username;
                   const token = generateSessionToken(username, longName);
+                  
+                  // Clear rate limit counter on successful login
+                  cache.remove(rateLimitKey);
+                  
                   logAction('login_success_admin', username, { longName: longName });
                   return { success: true, message: "ล็อกอินสำเร็จ", longName: longName, username: username, token: token, isAdmin: true };
                 } else {
@@ -1105,6 +1150,10 @@ function userLogin(username, password) {
                   } catch (e) { Logger.log('Migration write failed: ' + e); }
                   const longName = longNameIndex !== -1 ? String(row[longNameIndex] || '').trim() : username;
                   const token = generateSessionToken(username, longName);
+                  
+                  // Clear rate limit counter on successful login
+                  cache.remove(rateLimitKey);
+                  
                   logAction('login_success_admin', username, { migrated: true, longName: longName });
                   return { success: true, message: "ล็อกอินสำเร็จ", longName: longName, username: username, token: token, isAdmin: true };
                 } else {
@@ -1142,6 +1191,10 @@ function userLogin(username, password) {
           if (storedPass === providedHash) {
             const longName = longNameIndex !== -1 ? String(row[longNameIndex] || '').trim() : username;
             const token = generateSessionToken(username, longName);
+            
+            // Clear rate limit counter on successful login
+            cache.remove(rateLimitKey);
+            
             logAction('login_success', username, { longName: longName });
             return { success: true, message: "ล็อกอินสำเร็จ", longName: longName, username: username, token: token, isAdmin: false };
           } else {
@@ -1159,6 +1212,10 @@ function userLogin(username, password) {
             } catch (e) { Logger.log('Migration write failed: ' + e); }
             const longName = longNameIndex !== -1 ? String(row[longNameIndex] || '').trim() : username;
             const token = generateSessionToken(username, longName);
+            
+            // Clear rate limit counter on successful login
+            cache.remove(rateLimitKey);
+            
             logAction('login_success', username, { migrated: true, longName: longName });
             return { success: true, message: "ล็อกอินสำเร็จ", longName: longName, username: username, token: token, isAdmin: false };
           } else {
@@ -1170,11 +1227,22 @@ function userLogin(username, password) {
       }
     }
 
-    Utilities.sleep(300);
+    // Ensure consistent timing to prevent username enumeration
+    const elapsed = Date.now() - startTime;
+    if (elapsed < 300) {
+      Utilities.sleep(300 - elapsed);
+    }
+    
     logAction('login_failed', username, { reason: 'not_found' });
     return { success: false, message: "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง" };
 
   } catch (error) {
+    // Ensure consistent timing even on error
+    const elapsed = Date.now() - startTime;
+    if (elapsed < 300) {
+      Utilities.sleep(300 - elapsed);
+    }
+    
     console.error('userLogin error:', error);
     logAction('login_error', username, { error: error.message });
     return { success: false, message: "เกิดข้อผิดพลาดในการล็อกอิน: " + error.message };

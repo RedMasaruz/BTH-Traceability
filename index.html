@@ -6,6 +6,15 @@
     <!-- Updated viewport to include safe-area for iOS devices -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>ระบบบันทึกและติดตามเกษตรกร</title>
+    
+    <!-- Security: Content Security Policy to prevent XSS attacks -->
+    <meta http-equiv="Content-Security-Policy" 
+          content="default-src 'self'; 
+                   script-src 'self' 'unsafe-inline' cdn.tailwindcss.com https://script.google.com https://cdn.jsdelivr.net; 
+                   style-src 'self' 'unsafe-inline' fonts.googleapis.com; 
+                   font-src fonts.gstatic.com; 
+                   img-src 'self' data:; 
+                   connect-src 'self' https://script.google.com;">
 
     <!-- PWA Meta Tags -->
     <meta name="description" content="ระบบบันทึกและติดตามข้อมูลเกษตรกร - บริษัท บ้านไทยเฮิร์บเซ็นเตอร์ จำกัด">
@@ -7340,12 +7349,22 @@
                         rows.push(row);
                     });
 
-                    const csv = rows.join('\n');
+                    const csv = '\uFEFF' + rows.join('\n'); // Add UTF-8 BOM for better Excel compatibility
                     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
-                    const username = sessionStorage.getItem('username') || 'admin';
-                    const filename = `admin_export_${username}_${new Date().toISOString().slice(0, 10)}.csv`;
+                    
+                    // Sanitize filename to prevent path traversal
+                    function sanitizeFilename(str) {
+                      if (!str || typeof str !== 'string') return 'unknown';
+                      // Remove path traversal and special characters, keep only alphanumeric, underscore, dash
+                      return str.replace(/[^a-zA-Z0-9_-]/g, '').substring(0, 50);
+                    }
+                    
+                    const username = sanitizeFilename(sessionStorage.getItem('username') || 'admin');
+                    const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+                    const filename = `admin_export_${username}_${date}.csv`;
+                    
                     a.href = url;
                     a.download = filename;
                     document.body.appendChild(a);
