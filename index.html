@@ -7414,33 +7414,106 @@
             function fetchAndShowAdminDebug(token, context) {
                 if (!token) {
                     console.warn('fetchAndShowAdminDebug: no token provided');
+                    if (typeof showMessageBox === 'function') {
+                        showMessageBox('⚠️ Debug Warning', 'No authentication token provided for debug operation');
+                    }
                     return;
                 }
                 
                 try {
                     console.log('fetchAndShowAdminDebug called with context:', context);
                     
+                    // Check if Google Apps Script API is available
                     if (typeof google === 'undefined' || !google.script || !google.script.run) {
                         console.error('fetchAndShowAdminDebug: google.script.run not available');
+                        if (typeof showMessageBox === 'function') {
+                            showMessageBox('❌ Environment Error', 'Google Apps Script API is not available. This debug function only works in the deployed web app environment.');
+                        }
                         return;
                     }
                     
+                    // Set loading state
+                    setAdminControlsDisabled(true);
+                    showLoading(true);
+                    
+                    // Set timeout for debug operation (30 seconds)
+                    const debugTimeout = setTimeout(() => {
+                        console.warn('fetchAndShowAdminDebug: operation timed out');
+                        setAdminControlsDisabled(false);
+                        showLoading(false);
+                        if (typeof showMessageBox === 'function') {
+                            showMessageBox('⏱️ Debug Timeout', 'Debug operation took too long and was cancelled. Please try again.');
+                        }
+                    }, 30000);
+                    
                     google.script.run
                         .withSuccessHandler(result => {
+                            clearTimeout(debugTimeout);
+                            setAdminControlsDisabled(false);
+                            showLoading(false);
+                            
                             console.log('Debug info fetched successfully:', result);
+                            
+                            // Display debug information
                             if (typeof showMessageBox === 'function') {
-                                showMessageBox('🔍 Debug Info - ' + escapeHtml(context), `<pre style="white-space:pre-wrap;">${escapeHtml(JSON.stringify(result, null, 2))}</pre>`);
+                                const contextDisplay = escapeHtml(context || 'Debug Info');
+                                const resultDisplay = escapeHtml(JSON.stringify(result, null, 2));
+                                showMessageBox('🔍 Debug Info - ' + contextDisplay, 
+                                    `<pre style="white-space:pre-wrap; max-height:400px; overflow-y:auto; font-family:monospace; font-size:12px;">${resultDisplay}</pre>`);
+                            } else {
+                                // Fallback to console if showMessageBox is not available
+                                console.log('=== DEBUG INFO ===');
+                                console.log('Context:', context);
+                                console.log('Result:', result);
+                                alert('Debug info logged to console (F12)');
                             }
                         })
                         .withFailureHandler(err => {
+                            clearTimeout(debugTimeout);
+                            setAdminControlsDisabled(false);
+                            showLoading(false);
+                            
                             console.error('fetchAndShowAdminDebug failed:', err);
+                            
+                            // Display detailed error information
+                            const errorMsg = (err && err.message) ? err.message : 'Unknown error';
                             if (typeof showMessageBox === 'function') {
-                                showMessageBox('❌ Debug fetch failed', escapeHtml((err && err.message) || 'Unknown error'));
+                                showMessageBox('❌ Debug Fetch Failed', 
+                                    `<div>
+                                        <p><strong>Context:</strong> ${escapeHtml(context || 'N/A')}</p>
+                                        <p><strong>Error:</strong> ${escapeHtml(errorMsg)}</p>
+                                        <p style="margin-top:10px; font-size:0.9em; color:#666;">
+                                            This debug operation failed. Please check:
+                                            <ul style="margin:5px 0; padding-left:20px;">
+                                                <li>Your authentication token is valid</li>
+                                                <li>You have admin permissions</li>
+                                                <li>The backend function getAllFarmersDebug exists</li>
+                                                <li>The spreadsheet is accessible</li>
+                                            </ul>
+                                        </p>
+                                    </div>`);
+                            } else {
+                                alert('Debug fetch failed: ' + errorMsg);
                             }
                         })
                         .getAllFarmersDebug(token);
+                        
                 } catch (e) {
+                    // Handle synchronous exceptions
                     console.error('fetchAndShowAdminDebug exception:', e);
+                    setAdminControlsDisabled(false);
+                    showLoading(false);
+                    
+                    const errorMsg = (e && e.message) ? e.message : String(e);
+                    if (typeof showMessageBox === 'function') {
+                        showMessageBox('❌ Debug Exception', 
+                            `<div>
+                                <p>An unexpected error occurred while initiating debug operation:</p>
+                                <pre style="background:#f5f5f5; padding:10px; margin-top:10px; border-radius:4px; overflow-x:auto;">${escapeHtml(errorMsg)}</pre>
+                            </div>`);
+                    } else {
+                        alert('Debug exception: ' + errorMsg);
+                    }
                 }
             };
             
