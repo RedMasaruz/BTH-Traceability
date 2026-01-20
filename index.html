@@ -7479,58 +7479,74 @@
                         return;
                     }
                     
-                    // Set loading state
-                    setAdminControlsDisabled(true);
-                    showLoading(true);
+                    // Track completion state to prevent race conditions
+                    let operationCompleted = false;
                     
                     // Set timeout for debug operation using CONFIG constant
+                    // Set before enabling loading state to ensure proper order
                     const debugTimeout = setTimeout(() => {
-                        console.warn('fetchAndShowAdminDebug: operation timed out');
-                        setAdminControlsDisabled(false);
-                        showLoading(false);
-                        if (typeof showMessageBox === 'function') {
-                            showMessageBox('⏱️ Debug Timeout', 'Debug operation took too long and was cancelled. Please try again.');
+                        // Only execute timeout handler if operation hasn't completed
+                        if (!operationCompleted) {
+                            console.warn('fetchAndShowAdminDebug: operation timed out');
+                            operationCompleted = true;
+                            setAdminControlsDisabled(false);
+                            showLoading(false);
+                            if (typeof showMessageBox === 'function') {
+                                showMessageBox('⏱️ Debug Timeout', 'Debug operation took too long and was cancelled. Please try again.');
+                            }
                         }
                     }, CONFIG.DEBUG_FETCH_TIMEOUT_MS);
                     
+                    // Set loading state after timeout is configured
+                    setAdminControlsDisabled(true);
+                    showLoading(true);
+                    
                     google.script.run
                         .withSuccessHandler(result => {
-                            clearTimeout(debugTimeout);
-                            setAdminControlsDisabled(false);
-                            showLoading(false);
-                            
-                            console.log('Debug info fetched successfully:', result);
-                            
-                            // Display debug information
-                            if (typeof showMessageBox === 'function') {
-                                const contextDisplay = escapeHtml(context || 'Debug Info');
-                                const resultDisplay = escapeHtml(JSON.stringify(result, null, 2));
-                                const template = createDebugInfoTemplate(resultDisplay);
-                                showMessageBox('🔍 Debug Info - ' + contextDisplay, template);
-                            } else {
-                                // Fallback to console if showMessageBox is not available
-                                console.log('=== DEBUG INFO ===');
-                                console.log('Context:', context);
-                                console.log('Result:', result);
-                                alert('Debug info logged to console (F12)');
+                            // Mark operation as completed and cleanup
+                            if (!operationCompleted) {
+                                operationCompleted = true;
+                                clearTimeout(debugTimeout);
+                                setAdminControlsDisabled(false);
+                                showLoading(false);
+                                
+                                console.log('Debug info fetched successfully:', result);
+                                
+                                // Display debug information
+                                if (typeof showMessageBox === 'function') {
+                                    const contextDisplay = escapeHtml(context || 'Debug Info');
+                                    const resultDisplay = escapeHtml(JSON.stringify(result, null, 2));
+                                    const template = createDebugInfoTemplate(resultDisplay);
+                                    showMessageBox('🔍 Debug Info - ' + contextDisplay, template);
+                                } else {
+                                    // Fallback to console if showMessageBox is not available
+                                    console.log('=== DEBUG INFO ===');
+                                    console.log('Context:', context);
+                                    console.log('Result:', result);
+                                    alert('Debug info logged to console (F12)');
+                                }
                             }
                         })
                         .withFailureHandler(err => {
-                            clearTimeout(debugTimeout);
-                            setAdminControlsDisabled(false);
-                            showLoading(false);
-                            
-                            console.error('fetchAndShowAdminDebug failed:', err);
-                            
-                            // Display detailed error information
-                            const errorMsg = (err && err.message) ? err.message : 'Unknown error';
-                            if (typeof showMessageBox === 'function') {
-                                const contextDisplay = escapeHtml(context || 'N/A');
-                                const escapedError = escapeHtml(errorMsg);
-                                const template = createDebugErrorTemplate(contextDisplay, escapedError);
-                                showMessageBox('❌ Debug Fetch Failed', template);
-                            } else {
-                                alert('Debug fetch failed: ' + errorMsg);
+                            // Mark operation as completed and cleanup
+                            if (!operationCompleted) {
+                                operationCompleted = true;
+                                clearTimeout(debugTimeout);
+                                setAdminControlsDisabled(false);
+                                showLoading(false);
+                                
+                                console.error('fetchAndShowAdminDebug failed:', err);
+                                
+                                // Display detailed error information
+                                const errorMsg = (err && err.message) ? err.message : 'Unknown error';
+                                if (typeof showMessageBox === 'function') {
+                                    const contextDisplay = escapeHtml(context || 'N/A');
+                                    const escapedError = escapeHtml(errorMsg);
+                                    const template = createDebugErrorTemplate(contextDisplay, escapedError);
+                                    showMessageBox('❌ Debug Fetch Failed', template);
+                                } else {
+                                    alert('Debug fetch failed: ' + errorMsg);
+                                }
                             }
                         })
                         .getAllFarmersDebug(token);
