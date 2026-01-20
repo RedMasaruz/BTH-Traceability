@@ -1,7 +1,7 @@
 {
-  "name": "ระบบบันทึกและติดตามเกษตรกร - BTH",
+  "name": "Traceability - BTH",
   "short_name": "BTH Farmer",
-  "description": "ระบบบันทึกและติดตามข้อมูลเกษตรกร - บริษัท บ้านไทยเฮิร์บเซ็นเตอร์ จำกัด",
+  "description": "Traceability - บริษัท บ้านไทยเฮิร์บเซ็นเตอร์ จำกัด",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#f5f8fa",
