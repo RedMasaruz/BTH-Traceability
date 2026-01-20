@@ -1,9 +1,9 @@
 // Service Worker for BTH Farmer Tracking System
 const CACHE_NAME = 'bth-farmer-v1';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/manifest.json'
+  './',
+  './index.html',
+  './manifest.json'
 ];
 
 // Install event - cache essential resources
