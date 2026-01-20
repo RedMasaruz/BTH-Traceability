@@ -6,15 +6,6 @@
     <!-- Updated viewport to include safe-area for iOS devices -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>ระบบบันทึกและติดตามเกษตรกร</title>
-    
-    <!-- Security: Content Security Policy to prevent XSS attacks -->
-    <meta http-equiv="Content-Security-Policy" 
-          content="default-src 'self'; 
-                   script-src 'self' 'unsafe-inline' cdn.tailwindcss.com https://script.google.com https://cdn.jsdelivr.net; 
-                   style-src 'self' 'unsafe-inline' fonts.googleapis.com; 
-                   font-src fonts.gstatic.com; 
-                   img-src 'self' data:; 
-                   connect-src 'self' https://script.google.com https://script.googleusercontent.com https://cdn.jsdelivr.net;">
 
     <!-- PWA Meta Tags -->
     <meta name="description" content="ระบบบันทึกและติดตามข้อมูลเกษตรกร - บริษัท บ้านไทยเฮิร์บเซ็นเตอร์ จำกัด">
@@ -4952,18 +4943,6 @@
         
         // Helper function to show admin view after successful login
         function showAdminView() {
-            // SECURITY FIX: Always verify admin session before showing view
-            // Prevents direct console call bypass
-            if (!isAdminSession()) {
-                console.warn('Unauthorized attempt to access admin view');
-                const warning = document.getElementById('admin-access-warning');
-                const controls = document.getElementById('admin-controls');
-                if (warning) warning.classList.remove('hidden');
-                if (controls) controls.classList.add('hidden');
-                if (typeof showAdminLoginModal === 'function') showAdminLoginModal();
-                return;
-            }
-            
             const warning = document.getElementById('admin-access-warning');
             const controls = document.getElementById('admin-controls');
             const currentUserEl = document.getElementById('admin-current-user');
@@ -7006,7 +6985,8 @@
                 SEARCH_DEBOUNCE_MS: 300,
                 MAX_SAFE_EXPORT_ROWS: 5000,
                 MAX_LOGIN_ATTEMPTS: 5,
-                LOGIN_ATTEMPT_WINDOW_MS: 300000 // 5 minutes
+                LOGIN_ATTEMPT_WINDOW_MS: 300000, // 5 minutes
+                DEBUG_FETCH_TIMEOUT_MS: 30000 // 30 seconds timeout for debug operations
             };
             
             // state
@@ -7231,56 +7211,12 @@
                 try {
                     const token = sessionStorage.getItem('sessionToken');
                     const username = sessionStorage.getItem('username');
-                    const isAdmin = sessionStorage.getItem('isAdmin');
+                    const isAdmin = sessionStorage.getItem('isAdmin'); // expected 'true' or 'false'
 
-                    // Check existence
+                    // require token and server-provided isAdmin flag
                     if (!token || !username) return false;
-                    if (isAdmin !== 'true') return false;
-                    
-                    // SECURITY FIX: Validate token format (base64.base64)
-                    if (typeof token !== 'string') return false;
-                    const parts = token.split('.');
-                    if (parts.length !== 2) {
-                        console.warn('Invalid token format - clearing session');
-                        sessionStorage.clear();
-                        return false;
-                    }
-                    
-                    // SECURITY FIX: Validate token expiry and username (client-side defense-in-depth)
-                    try {
-                        const encodedData = parts[0];
-                        const decodedData = atob(encodedData);
-                        const tokenData = JSON.parse(decodedData);
-                        
-                        if (!tokenData.timestamp) {
-                            console.warn('Token missing timestamp - clearing session');
-                            sessionStorage.clear();
-                            return false;
-                        }
-                        
-                        // Check if token is expired (24 hours = 86400000ms)
-                        const now = Date.now();
-                        const tokenAge = now - tokenData.timestamp;
-                        if (tokenAge > 86400000) {
-                            console.warn('Token expired on client side - clearing session');
-                            sessionStorage.clear();
-                            return false;
-                        }
-                        
-                        // Verify username matches token
-                        if (tokenData.username !== username) {
-                            console.warn('Token username mismatch - clearing session');
-                            sessionStorage.clear();
-                            return false;
-                        }
-                        
-                    } catch (e) {
-                        console.error('Token validation error:', e);
-                        sessionStorage.clear();
-                        return false;
-                    }
-                    
-                    return true;
+                    if (isAdmin === 'true') return true;
+                    return false;
                 } catch (e) {
                     console.error('admin: isAdminSession error', e);
                     return false;
@@ -7303,111 +7239,24 @@
                 }
             };
 
-            // Race condition prevention flag
-            let isAdminInitializing = false;
-
             window.adminCheckAuthAndInit = function () {
-                // SECURITY FIX: Prevent concurrent calls (race condition)
-                if (isAdminInitializing) {
-                    console.log('Admin init already in progress, skipping');
+                const currentUserEl = document.getElementById('admin-current-user');
+                const warning = document.getElementById('admin-access-warning');
+                const controls = document.getElementById('admin-controls');
+
+                const username = sessionStorage.getItem('username') || '';
+                const longName = sessionStorage.getItem('longName') || '';
+                if (currentUserEl) currentUserEl.textContent = username ? `${username} (${longName || '-'})` : 'ไม่ได้ล็อกอิน';
+
+                if (!isAdminSession()) {
+                    if (warning) warning.classList.remove('hidden');
+                    if (controls) controls.classList.add('hidden');
+                    if (typeof showAdminLoginModal === 'function') showAdminLoginModal();
                     return;
                 }
-                
-                isAdminInitializing = true;
-                const username = sessionStorage.getItem('username') || 'anonymous';
-                
-                try {
-                    const currentUserEl = document.getElementById('admin-current-user');
-                    const warning = document.getElementById('admin-access-warning');
-                    const controls = document.getElementById('admin-controls');
-                    
-                    // SECURITY FIX: Validate critical elements exist
-                    if (!warning || !controls) {
-                        console.error('Critical admin UI elements not found', {
-                            warning: !!warning,
-                            controls: !!controls
-                        });
-                        return;
-                    }
 
-                    // ALWAYS update display from current sessionStorage (not cached)
-                    const currentUsername = sessionStorage.getItem('username') || '';
-                    const longName = sessionStorage.getItem('longName') || '';
-                    if (currentUserEl) {
-                        currentUserEl.textContent = currentUsername ? `${currentUsername} (${longName || '-'})` : 'ไม่ได้ล็อกอิน';
-                    }
-
-                    if (!isAdminSession()) {
-                        console.warn('Admin access denied:', {
-                            username: username,
-                            hasToken: !!sessionStorage.getItem('sessionToken'),
-                            isAdmin: sessionStorage.getItem('isAdmin'),
-                            timestamp: new Date().toISOString()
-                        });
-                        
-                        if (warning) warning.classList.remove('hidden');
-                        if (controls) controls.classList.add('hidden');
-                        
-                        // SECURITY FIX: Check if modal is already visible
-                        const modal = document.getElementById('admin-login');
-                        if (modal && !modal.classList.contains('hidden')) {
-                            console.log('Admin login modal already visible');
-                            return;
-                        }
-                        
-                        if (typeof showAdminLoginModal === 'function') {
-                            if (modal) {
-                                showAdminLoginModal();
-                            } else {
-                                console.error('Admin login modal not found in DOM');
-                            }
-                        } else {
-                            console.error('showAdminLoginModal function not defined');
-                            if (typeof showMessageBox === 'function') {
-                                showMessageBox('❌ เกิดข้อผิดพลาด', 'ฟังก์ชันเข้าสู่ระบบไม่พร้อมใช้งาน');
-                            }
-                        }
-                        return;
-                    }
-
-                    console.log('Admin access granted:', {
-                        username: username,
-                        timestamp: new Date().toISOString()
-                    });
-                    
-                    // UX: Show brief loading state
-                    const loadingIndicator = document.getElementById('admin-loading');
-                    if (loadingIndicator) loadingIndicator.classList.remove('hidden');
-                    
-                    setTimeout(() => {
-                        if (typeof showAdminView === 'function') {
-                            showAdminView();
-                        } else {
-                            console.error('showAdminView function not defined');
-                            if (typeof navigateTo === 'function') {
-                                navigateTo('admin-view');
-                            }
-                        }
-                        if (loadingIndicator) loadingIndicator.classList.add('hidden');
-                    }, 150);
-                    
-                } catch (error) {
-                    console.error('adminCheckAuthAndInit error:', {
-                        username: username,
-                        error: error.message,
-                        stack: error.stack,
-                        timestamp: new Date().toISOString()
-                    });
-                    
-                    if (typeof showMessageBox === 'function') {
-                        showMessageBox('❌ เกิดข้อผิดพลาด', 'ไม่สามารถเข้าสู่หน้าผู้ดูแลได้ กรุณาลองใหม่อีกครั้ง');
-                    }
-                } finally {
-                    // Reset flag after delay to allow legitimate re-calls
-                    setTimeout(() => {
-                        isAdminInitializing = false;
-                    }, 100);
-                }
+                // Use helper function for consistency
+                showAdminView();
             };
 
             function showLoading(show = true) {
@@ -7492,22 +7341,12 @@
                         rows.push(row);
                     });
 
-                    const csv = '\uFEFF' + rows.join('\n'); // Add UTF-8 BOM for better Excel compatibility
+                    const csv = rows.join('\n');
                     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
-                    
-                    // Sanitize filename to prevent path traversal
-                    function sanitizeFilename(str) {
-                      if (!str || typeof str !== 'string') return 'unknown';
-                      // Remove path traversal and special characters, keep only alphanumeric, underscore, dash
-                      return str.replace(/[^a-zA-Z0-9_-]/g, '').substring(0, 50);
-                    }
-                    
-                    const username = sanitizeFilename(sessionStorage.getItem('username') || 'admin');
-                    const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-                    const filename = `admin_export_${username}_${date}.csv`;
-                    
+                    const username = sessionStorage.getItem('username') || 'admin';
+                    const filename = `admin_export_${username}_${new Date().toISOString().slice(0, 10)}.csv`;
                     a.href = url;
                     a.download = filename;
                     document.body.appendChild(a);
@@ -7572,6 +7411,164 @@
                 showLoading(flag);
             }
 
+            /**
+             * Creates HTML template for displaying debug information.
+             * @param {string} resultDisplay - Pre-escaped JSON result string
+             * @returns {string} HTML template string
+             * @security Parameter MUST be HTML-escaped before calling this function
+             */
+            function createDebugInfoTemplate(resultDisplay) {
+                return `<pre style="white-space:pre-wrap; max-height:400px; overflow-y:auto; font-family:monospace; font-size:12px;">${resultDisplay}</pre>`;
+            }
+            
+            /**
+             * Creates HTML template for displaying debug error messages.
+             * @param {string} contextDisplay - Pre-escaped context description
+             * @param {string} errorMsg - Pre-escaped error message
+             * @returns {string} HTML template string
+             * @security Both parameters MUST be HTML-escaped before calling this function
+             */
+            function createDebugErrorTemplate(contextDisplay, errorMsg) {
+                return `<div>
+                    <p><strong>Context:</strong> ${contextDisplay}</p>
+                    <p><strong>Error:</strong> ${errorMsg}</p>
+                    <p style="margin-top:10px; font-size:0.9em; color:#666;">
+                        This debug operation failed. Please check:
+                        <ul style="margin:5px 0; padding-left:20px;">
+                            <li>Your authentication token is valid</li>
+                            <li>You have admin permissions</li>
+                            <li>The backend function getAllFarmersDebug exists</li>
+                            <li>The spreadsheet is accessible</li>
+                        </ul>
+                    </p>
+                </div>`;
+            }
+            
+            /**
+             * Creates HTML template for displaying debug exceptions.
+             * @param {string} errorMsg - Pre-escaped error message
+             * @returns {string} HTML template string
+             * @security Parameter MUST be HTML-escaped before calling this function
+             */
+            function createDebugExceptionTemplate(errorMsg) {
+                return `<div>
+                    <p>An unexpected error occurred while initiating debug operation:</p>
+                    <pre style="background:#f5f5f5; padding:10px; margin-top:10px; border-radius:4px; overflow-x:auto;">${errorMsg}</pre>
+                </div>`;
+            }
+            
+            // Debug helper to fetch and display admin debug info
+            function fetchAndShowAdminDebug(token, context) {
+                if (!token) {
+                    console.warn('fetchAndShowAdminDebug: no token provided');
+                    if (typeof showMessageBox === 'function') {
+                        showMessageBox('⚠️ Debug Warning', 'No authentication token provided for debug operation');
+                    }
+                    return;
+                }
+                
+                try {
+                    console.log('fetchAndShowAdminDebug called with context:', context);
+                    
+                    // Check if Google Apps Script API is available
+                    if (typeof google === 'undefined' || !google.script || !google.script.run) {
+                        console.error('fetchAndShowAdminDebug: google.script.run not available');
+                        if (typeof showMessageBox === 'function') {
+                            showMessageBox('❌ Environment Error', 'Google Apps Script API is not available. This debug function only works in the deployed web app environment.');
+                        }
+                        return;
+                    }
+                    
+                    // Track completion state to prevent race conditions
+                    let operationCompleted = false;
+                    
+                    // Set timeout for debug operation using CONFIG constant
+                    // Set before enabling loading state to ensure proper order
+                    const debugTimeout = setTimeout(() => {
+                        // Only execute timeout handler if operation hasn't completed
+                        if (!operationCompleted) {
+                            console.warn('fetchAndShowAdminDebug: operation timed out');
+                            operationCompleted = true;
+                            setAdminControlsDisabled(false);
+                            showLoading(false);
+                            if (typeof showMessageBox === 'function') {
+                                showMessageBox('⏱️ Debug Timeout', 'Debug operation took too long and was cancelled. Please try again.');
+                            }
+                        }
+                    }, CONFIG.DEBUG_FETCH_TIMEOUT_MS);
+                    
+                    // Set loading state after timeout is configured
+                    setAdminControlsDisabled(true);
+                    showLoading(true);
+                    
+                    google.script.run
+                        .withSuccessHandler(result => {
+                            // Mark operation as completed and cleanup
+                            if (!operationCompleted) {
+                                operationCompleted = true;
+                                clearTimeout(debugTimeout);
+                                setAdminControlsDisabled(false);
+                                showLoading(false);
+                                
+                                console.log('Debug info fetched successfully:', result);
+                                
+                                // Display debug information
+                                if (typeof showMessageBox === 'function') {
+                                    const contextDisplay = escapeHtml(context || 'Debug Info');
+                                    const resultDisplay = escapeHtml(JSON.stringify(result, null, 2));
+                                    const template = createDebugInfoTemplate(resultDisplay);
+                                    showMessageBox('🔍 Debug Info - ' + contextDisplay, template);
+                                } else {
+                                    // Fallback to console if showMessageBox is not available
+                                    console.log('=== DEBUG INFO ===');
+                                    console.log('Context:', context);
+                                    console.log('Result:', result);
+                                    alert('Debug info logged to console (F12)');
+                                }
+                            }
+                        })
+                        .withFailureHandler(err => {
+                            // Mark operation as completed and cleanup
+                            if (!operationCompleted) {
+                                operationCompleted = true;
+                                clearTimeout(debugTimeout);
+                                setAdminControlsDisabled(false);
+                                showLoading(false);
+                                
+                                console.error('fetchAndShowAdminDebug failed:', err);
+                                
+                                // Display detailed error information
+                                const errorMsg = (err && err.message) ? err.message : 'Unknown error';
+                                if (typeof showMessageBox === 'function') {
+                                    const contextDisplay = escapeHtml(context || 'N/A');
+                                    const escapedError = escapeHtml(errorMsg);
+                                    const template = createDebugErrorTemplate(contextDisplay, escapedError);
+                                    showMessageBox('❌ Debug Fetch Failed', template);
+                                } else {
+                                    alert('Debug fetch failed: ' + errorMsg);
+                                }
+                            }
+                        })
+                        .getAllFarmersDebug(token);
+                        
+                } catch (e) {
+                    // Handle synchronous exceptions
+                    console.error('fetchAndShowAdminDebug exception:', e);
+                    setAdminControlsDisabled(false);
+                    showLoading(false);
+                    
+                    // Use safe error message to avoid exposing internal error objects
+                    const errorMsg = (e && e.message) ? e.message : 'An unexpected error occurred';
+                    if (typeof showMessageBox === 'function') {
+                        const escapedError = escapeHtml(errorMsg);
+                        const template = createDebugExceptionTemplate(escapedError);
+                        showMessageBox('❌ Debug Exception', template);
+                    } else {
+                        alert('Debug exception: An unexpected error occurred');
+                    }
+                }
+            };
+            
 
             window.adminFetchAllFarmers = function () {
                 if (!isAdminSession()) {
@@ -7640,6 +7637,7 @@
                         .withFailureHandler(err => {
                             setFetching(false);
                             console.error('=== adminFetchAllFarmers FAILURE ===', err);
+                            fetchAndShowAdminDebug(token, 'getAllFarmers failed (failureHandler)');
                             if (typeof showMessageBox === 'function') showMessageBox('❌ ดึงข้อมูลล้มเหลว', escapeHtml((err && err.message) || 'ไม่สามารถดึงข้อมูลจาก Backend ได้'));
                         })
                         .getAllFarmers(token);
@@ -7679,7 +7677,7 @@
                             console.log('getAllUsage result:', result);
 
                             if (result === null || typeof result === 'undefined') {
-                                if (typeof showMessageBox === 'function') showMessageBox('❌ ไม่มีผลลัพธ์', 'getAllUsage คืนค่าเป็น null/undefined');
+                                fetchAndShowAdminDebug(token, 'getAllUsage returned null/undefined');
                                 return;
                             }
                             try {
@@ -7697,6 +7695,7 @@
                         .withFailureHandler(err => {
                             setFetching(false);
                             console.error('adminFetchAllUsage failed', err);
+                            fetchAndShowAdminDebug(token, 'getAllUsage failed (failureHandler)');
                             if (typeof showMessageBox === 'function') showMessageBox('❌ ดึงข้อมูลล้มเหลว', escapeHtml((err && err.message) || 'ไม่สามารถดึงข้อมูลจาก Backend ได้'));
                         })
                         .getAllUsage(token);
@@ -7735,7 +7734,7 @@
                             console.log('getAllMerged result:', result);
 
                             if (result === null || typeof result === 'undefined') {
-                                if (typeof showMessageBox === 'function') showMessageBox('❌ ไม่มีผลลัพธ์', 'getAllMerged คืนค่าเป็น null/undefined');
+                                fetchAndShowAdminDebug(token, 'getAllMerged returned null/undefined');
                                 return;
                             }
 
@@ -7754,6 +7753,7 @@
                         .withFailureHandler(err => {
                             setFetching(false);
                             console.error('adminFetchMerged failed', err);
+                            fetchAndShowAdminDebug(token, 'getAllMerged failed (failureHandler)');
                             if (typeof showMessageBox === 'function') showMessageBox('❌ ดึงข้อมูลล้มเหลว', escapeHtml((err && err.message) || 'ไม่สามารถดึงข้อมูลจาก Backend ได้'));
                         })
                         .getAllMerged(token);
@@ -7889,39 +7889,6 @@
                 });
                 mo.observe(adminView, { attributes: true, attributeFilter: ['class'] });
             }
-            
-            // SECURITY FIX: Monitor sessionStorage for clearing/tampering
-            window.addEventListener('storage', function(e) {
-                if (e.key === 'sessionToken' || e.key === 'isAdmin' || e.key === null) {
-                    if (!isAdminSession()) {
-                        console.log('Session cleared, hiding admin controls');
-                        const controls = document.getElementById('admin-controls');
-                        const warning = document.getElementById('admin-access-warning');
-                        if (controls) controls.classList.add('hidden');
-                        if (warning) warning.classList.remove('hidden');
-                        
-                        const adminView = document.getElementById('admin-view');
-                        if (adminView && !adminView.classList.contains('hidden')) {
-                            if (typeof navigateTo === 'function') navigateTo('main-menu-view');
-                        }
-                    }
-                }
-            });
-            
-            // SECURITY FIX: Periodic session validation (every 60 seconds)
-            setInterval(() => {
-                const adminView = document.getElementById('admin-view');
-                if (adminView && !adminView.classList.contains('hidden')) {
-                    if (!isAdminSession()) {
-                        console.warn('Session lost while on admin view, redirecting');
-                        if (typeof adminForceLogout === 'function') {
-                            adminForceLogout();
-                        } else if (typeof navigateTo === 'function') {
-                            navigateTo('main-menu-view');
-                        }
-                    }
-                }
-            }, 60000);
         })();
 
         // =============================================
