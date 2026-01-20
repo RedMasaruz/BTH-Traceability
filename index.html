@@ -5069,10 +5069,11 @@
                     if (!response.username || typeof response.username !== 'string' || response.username.length === 0) {
                         throw new Error('Invalid username received from server');
                     }
-
+                    
                     // Store admin session data
+                    // Note: longName is optional - backend may return empty string or undefined
                     sessionStorage.setItem('sessionToken', response.token);
-                    sessionStorage.setItem('longName', response.longName || '');
+                    sessionStorage.setItem('longName', response.longName || ''); // Optional field
                     sessionStorage.setItem('username', response.username);
                     // We already validated isAdmin is true, so set it directly
                     sessionStorage.setItem('isAdmin', 'true');
@@ -7005,7 +7006,10 @@
                 );
                 
                 if (adminLoginAttempts.length >= CONFIG.MAX_LOGIN_ATTEMPTS) {
-                    const oldestAttempt = Math.min(...adminLoginAttempts);
+                    // Use reduce for safety with large arrays (avoid spread operator stack overflow)
+                    const oldestAttempt = adminLoginAttempts.reduce((min, current) => 
+                        Math.min(min, current), Number.MAX_SAFE_INTEGER
+                    );
                     const waitTime = Math.ceil((CONFIG.LOGIN_ATTEMPT_WINDOW_MS - (now - oldestAttempt)) / 1000 / 60);
                     return { allowed: false, waitMinutes: waitTime };
                 }
@@ -7326,7 +7330,8 @@
                             s = s.replace(/"/g, '""');
                             
                             // CSV Injection Prevention: If cell starts with formula characters, prepend single quote
-                            if (s.length > 0 && /^[=+\-@\t\r]/.test(s)) {
+                            // Hyphen placed at end of character class to avoid escaping issues
+                            if (s.length > 0 && /^[=+@\t\r\-]/.test(s)) {
                                 s = "'" + s;
                             }
                             
@@ -7739,8 +7744,9 @@
                     .getAllFarmersDebug(token);
             };
 
-            // Expose minimal helpers for debugging (avoid exposing sensitive data)
-            if (typeof console !== 'undefined' && console.log) {
+            // Expose minimal debug helpers only in development mode
+            // Production deployments should remove this or gate it with environment check
+            if (typeof console !== 'undefined' && console.log && window.location.hostname === 'localhost') {
                 window._admin_internal = {
                     getStats: () => ({
                         dataCount: lastFetchedData.length,

@@ -505,8 +505,10 @@ function getLongNameFromUsers(username) {
 
 /* ========== ADMIN USER HELPERS ========== */
 /**
- * Check if the given username is listed in the UserAdmin sheet.
- * If password provided, optionally verify password too.
+ * Check if the given username is listed in the UserAdmin sheet or has admin role in Users sheet.
+ * @param {string} username - The username to check
+ * @param {string} [password] - Optional password to verify (currently unused, reserved for future use)
+ * @returns {boolean} True if user has admin privileges
  */
 function isAdminUsername(username, password) {
   console.log('=== isAdminUsername DEBUG ===');
@@ -1548,7 +1550,7 @@ function getAllFarmers(token) {
       return { success: false, message: 'Token expired' };
     }
     
-    if (!isAdminUsername(session.username, null)) {
+    if (!isAdminUsername(session.username)) {
       logAction('admin_access_denied', session.username, { function: 'getAllFarmers', reason: 'not_admin' });
       return { success: false, message: 'Forbidden: not admin' };
     }
@@ -1615,7 +1617,7 @@ function getAllUsage(token) {
       return { success: false, message: 'Token expired' };
     }
     
-    if (!isAdminUsername(session.username, null)) return { success: false, message: 'Forbidden: not admin' };
+    if (!isAdminUsername(session.username)) return { success: false, message: 'Forbidden: not admin' };
 
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID_B);
     const sheets = ss.getSheets();
@@ -1670,7 +1672,7 @@ function getAllMerged(token) {
       return { success: false, message: 'Token expired' };
     }
     
-    if (!isAdminUsername(session.username, null)) return { success: false, message: 'Forbidden: not admin' };
+    if (!isAdminUsername(session.username)) return { success: false, message: 'Forbidden: not admin' };
 
     // Get farmers data (แปลง Date แล้ว)
     const farmersResult = getAllFarmers(token);
@@ -2016,7 +2018,7 @@ function getAllFarmersDebug(token) {
       return { success: false, message: 'Token expired (debug)' };
     }
     
-    if (!isAdminUsername(session.username, null)) return { success: false, message: 'Forbidden: not admin (debug)' };
+    if (!isAdminUsername(session.username)) return { success: false, message: 'Forbidden: not admin (debug)' };
 
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID_A);
     const sheet = ss.getSheetByName(SHEET_A_NAME);
