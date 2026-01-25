@@ -25,6 +25,7 @@
     <link rel="apple-touch-icon" sizes="152x152" href="./icons/icon-152x152.png">
     <link rel="apple-touch-icon" sizes="180x180" href="./icons/icon-192x192.png">
 
+    <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -46,10 +47,13 @@
             --color-pastel-bg: #f5f8fa;
             --color-card-a: #DCD0FF;
             --color-card-a-dark: #A396D1;
-            --color-card-b: #B9FBC0;
-            --color-card-b-dark: #8BD193;
+            --color-card-b: #6FBF73;
+            /* เขียวใบไม้ */
+            --color-card-b-dark: #2F7D32;
+            /* เขียวเข้มธรรมชาติ */
             --color-accent: #f7c9b6;
             --color-text-dark: #333333;
+            --color-text-light: #ffffff;
             --color-primary-medium: #44403c;
             --color-primary-dark: #292524;
             --dynamic-accent: #16a34a;
@@ -487,7 +491,7 @@
 
         .search-button {
             background-color: var(--color-card-b);
-            color: var(--color-text-dark);
+            color: var(--color-text-light);
             font-weight: 600;
             transition: background-color 0.2s ease, transform 0.1s ease;
             box-shadow: 0 4px var(--color-card-b-dark);
@@ -800,6 +804,54 @@
             position: relative;
         }
 
+        /* GACP Custom Styles */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        @keyframes slide-in {
+            from {
+                transform: translateY(-8px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .animate-in {
+            animation: slide-in 0.3s ease-out forwards;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
         .inset-0 {
             top: 0;
             right: 0;
@@ -974,6 +1026,240 @@
                 padding: 8px 6px;
                 font-size: 12px;
                 min-width: 100px;
+            }
+        }
+
+        /* =============================================
+           ADMIN-LOUNGE RESPONSIVE LAYOUT
+           Supports: Mobile, iPad/Tablet, Desktop
+           ============================================= */
+
+        /* Base admin-lounge layout */
+        #admin-lounge {
+            display: flex;
+            flex-direction: row;
+            height: calc(100vh - 200px);
+            min-height: 600px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Sidebar base styles */
+        #gacp-sidebar {
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+
+        /* Main content area */
+        #admin-lounge>main {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        /* Mobile: < 768px - Sidebar hidden by default, overlay when open */
+        @media (max-width: 767px) {
+            #admin-lounge {
+                flex-direction: column;
+                height: auto;
+                min-height: calc(100vh - 200px);
+            }
+
+            #gacp-sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 280px;
+                height: 100vh;
+                z-index: 100;
+                transform: translateX(-100%);
+            }
+
+            #gacp-sidebar.open {
+                transform: translateX(0);
+            }
+
+            #admin-lounge>main {
+                width: 100%;
+                padding: 16px;
+                padding-top: 60px;
+                /* Space for mobile menu button */
+            }
+
+            /* Mobile header adjustments */
+            #admin-lounge .flex.flex-col.md\\:flex-row {
+                flex-direction: column;
+                gap: 16px;
+                margin-top: 0;
+            }
+
+            #admin-lounge h1 {
+                font-size: 1.5rem;
+            }
+
+            /* Mobile buttons stack */
+            #admin-lounge .flex.gap-4 {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            #admin-lounge .flex.gap-4 button {
+                width: 100%;
+            }
+        }
+
+        /* Tablet/iPad Portrait: 768px - 1023px */
+        @media (min-width: 768px) and (max-width: 1023px) {
+            #admin-lounge {
+                flex-direction: row;
+                height: calc(100vh - 200px);
+            }
+
+            #gacp-sidebar {
+                position: relative;
+                width: 240px;
+                transform: none;
+                flex-shrink: 0;
+            }
+
+            #admin-lounge>main {
+                flex: 1;
+                padding: 24px;
+                overflow-y: auto;
+            }
+
+            /* Adjust header for tablet */
+            #admin-lounge .flex.flex-col.md\\:flex-row {
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
+            }
+
+            #admin-lounge h1 {
+                font-size: 1.75rem;
+            }
+
+            /* Tablet buttons */
+            #admin-lounge .flex.gap-4 {
+                flex-direction: row;
+            }
+
+            #admin-lounge .flex.gap-4 button {
+                padding: 12px 20px;
+                font-size: 0.875rem;
+            }
+        }
+
+        /* iPad Landscape / Small Desktop: 1024px - 1279px */
+        @media (min-width: 1024px) and (max-width: 1279px) {
+            #admin-lounge {
+                flex-direction: row;
+                height: calc(100vh - 180px);
+            }
+
+            #gacp-sidebar {
+                position: relative;
+                width: 260px;
+                transform: none;
+            }
+
+            #admin-lounge>main {
+                flex: 1;
+                padding: 32px;
+            }
+
+            #admin-lounge h1 {
+                font-size: 2rem;
+            }
+        }
+
+        /* Desktop: >= 1280px */
+        @media (min-width: 1280px) {
+            #admin-lounge {
+                flex-direction: row;
+                height: calc(100vh - 150px);
+            }
+
+            #gacp-sidebar {
+                position: relative;
+                width: 288px;
+                transform: none;
+            }
+
+            #admin-lounge>main {
+                flex: 1;
+                padding: 48px;
+            }
+
+            #admin-lounge h1 {
+                font-size: 2.25rem;
+            }
+        }
+
+        /* Large Desktop: >= 1536px */
+        @media (min-width: 1536px) {
+            #gacp-sidebar {
+                width: 320px;
+            }
+
+            #admin-lounge>main {
+                padding: 56px;
+                max-width: 1400px;
+                margin: 0 auto;
+            }
+        }
+
+        /* GACP Content Area responsive grid */
+        #gacp-content-area {
+            width: 100%;
+        }
+
+        /* Criteria Modal responsive */
+        #gacp-criteria-modal>div {
+            max-width: 95vw;
+            max-height: 85vh;
+        }
+
+        @media (min-width: 768px) {
+            #gacp-criteria-modal>div {
+                max-width: 800px;
+            }
+        }
+
+        /* Custom scrollbar for admin-lounge */
+        #admin-lounge .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #admin-lounge .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 3px;
+        }
+
+        #admin-lounge .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 3px;
+        }
+
+        #admin-lounge .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        /* Overlay for mobile sidebar */
+        .gacp-sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 99;
+        }
+
+        @media (max-width: 767px) {
+            .gacp-sidebar-overlay.active {
+                display: block;
             }
         }
 
@@ -1570,7 +1856,8 @@
                                             <!-- สถานะตัวแทนเกษตรกร -->
                                             <div class="sm:col-span-2 lg:col-span-3">
                                                 <label
-                                                    class="form-label block font-medium mb-1 text-stone-800">สถานะตัวแทนเกษตรกร</label>
+                                                    class="form-label block font-medium mb-1 text-stone-800">สถานะตัวแทนเกษตรกร<span
+                                                        class="text-red-600">*</span></label>
                                                 <div class="radio-group flex flex-wrap gap-2">
                                                     <input type="radio" id="agent-none" name="farmer_agent" value="none"
                                                         class="hidden" onchange="toggleAgentInput()">
@@ -1671,7 +1958,8 @@
                                             <!-- หลักฐานที่ดิน -->
                                             <div class="sm:col-span-2 lg:col-span-12">
                                                 <label for="land_evidence"
-                                                    class="form-label block font-medium mb-1 text-stone-800">หลักฐานที่ดิน</label>
+                                                    class="form-label block font-medium mb-1 text-stone-800">หลักฐานที่ดิน<span
+                                                        class="text-red-600">*</span></label>
                                                 <select id="land_evidence" name="land_evidence"
                                                     class="w-full px-3 py-2 border border-gray-300 rounded text-sm md:text-base">
                                                     <option value="">-- ระบุหลักฐานที่ดิน --</option>
@@ -1734,8 +2022,8 @@
                                             <!-- ระบบให้น้ำ -->
                                             <div>
                                                 <label class="form-label block font-medium mb-1 text-stone-800">
-                                                    ระบบให้น้ำ <small
-                                                        class="text-gray-500">(เลือกได้มากกว่าหนึ่ง)</small>
+                                                    ระบบให้น้ำ <small class="text-gray-500">(เลือกได้มากกว่าหนึ่ง)<span
+                                                            class="text-red-600">*</span></small>
                                                 </label>
                                                 <div class="flex flex-col gap-2">
                                                     <div class="flex items-center">
@@ -1790,14 +2078,14 @@
                                                     น้ำ</label>
                                                 <input type="text"
                                                     class="w-full px-3 py-2 border border-gray-300 rounded text-sm md:text-base"
-                                                    id="water_ph" name="water_ph" placeholder="ค่า PH น้ำ">
+                                                    id="water_ph" name="water_ph" required placeholder="ค่า PH น้ำ">
                                             </div>
 
                                             <!-- วิธีให้ปุ๋ย -->
                                             <div>
                                                 <label class="form-label block font-medium mb-1 text-stone-800">
-                                                    ระบบให้ปุ๋ย <small
-                                                        class="text-gray-500">(เลือกได้มากกว่าหนึ่ง)</small>
+                                                    ระบบให้ปุ๋ย <small class="text-gray-500">(เลือกได้มากกว่าหนึ่ง)<span
+                                                            class="text-red-600">*</span></small>
                                                 </label>
                                                 <div class="flex flex-col gap-2">
                                                     <div class="flex items-center">
@@ -1846,13 +2134,14 @@
                                                     ดิน</label>
                                                 <input type="text"
                                                     class="w-full px-3 py-2 border border-gray-300 rounded text-sm md:text-base"
-                                                    id="soil_ph" name="soil_ph" placeholder="ค่า PH ดิน">
+                                                    id="soil_ph" name="soil_ph" required placeholder="ค่า PH ดิน">
                                             </div>
 
                                             <!-- ฮอร์โมน / อื่นๆ (รวมแร่ภูเขาไฟ ย้ายมาที่นี่) -->
                                             <div>
                                                 <label
-                                                    class="form-label block font-medium mb-1 text-stone-800">สารปรับปรุงดิน</label>
+                                                    class="form-label block font-medium mb-1 text-stone-800">สารปรับปรุงดิน<span
+                                                        class="text-red-600">*</span></label>
 
                                                 <!-- ย้าย 'แร่ภูเขาไฟ' มาที่ส่วนนี้ -->
                                                 <div class="flex items-center mb-2">
@@ -1862,7 +2151,8 @@
                                                         class="cursor-pointer text-sm">แร่ภูเขาไฟ</label>
                                                 </div>
                                                 <label for="hormone_and_other"
-                                                    class="form-label block font-medium mb-1 text-stone-800">ฮอร์โมน /
+                                                    class="form-label block font-medium mb-1 text-stone-800">ฮอร์โมน
+                                                    /<span class="text-red-600">*</span>
                                                     อื่นๆ</label>
 
                                                 <!-- รวมช่องฮอร์โมนและช่องอื่นๆ เป็นช่องเดียว -->
@@ -1885,7 +2175,8 @@
                                             <!-- ฤดูแตัวแทน -->
                                             <div>
                                                 <label
-                                                    class="form-label block font-bold mb-1 text-stone-800">ช่วงฤดูแล้ง</label>
+                                                    class="form-label block font-bold mb-1 text-stone-800">ช่วงฤดูแล้ง<span
+                                                        class="text-red-600">*</span></label>
                                                 <select
                                                     class="w-full px-3 py-2 border border-gray-300 rounded text-sm md:text-base mb-2"
                                                     name="dry_start_month" id="dry_start_month">
@@ -1925,7 +2216,8 @@
                                             <!-- ฤดูฝน -->
                                             <div>
                                                 <label
-                                                    class="form-label block font-bold mb-1 text-stone-800">ช่วงฤดูฝน</label>
+                                                    class="form-label block font-bold mb-1 text-stone-800">ช่วงฤดูฝน<span
+                                                        class="text-red-600">*</span></label>
                                                 <select
                                                     class="w-full px-3 py-2 border border-gray-300 rounded text-sm md:text-base mb-2"
                                                     name="rainy_start_month" id="rainy_start_month">
@@ -1965,7 +2257,8 @@
                                             <!-- ฤดูหนาว -->
                                             <div>
                                                 <label
-                                                    class="form-label block font-bold mb-1 text-stone-800">ช่วงฤดูหนาว</label>
+                                                    class="form-label block font-bold mb-1 text-stone-800">ช่วงฤดูหนาว<span
+                                                        class="text-red-600">*</span></label>
                                                 <select
                                                     class="w-full px-3 py-2 border border-gray-300 rounded text-sm md:text-base mb-2"
                                                     name="winter_start_month" id="winter_start_month">
@@ -2025,7 +2318,7 @@
                                                     <div id="gap-date-range" class="mt-2 hidden">
                                                         <label
                                                             class="form-label block text-sm mb-1 text-stone-800">ถ้ามี
-                                                            โปรดระบุ</label>
+                                                            โปรดระบุ วันที่เริ่มต้นและวันที่สิ้นสุด</label>
                                                         <div class="grid grid-cols-2 gap-2">
                                                             <div>
                                                                 <input type="date"
@@ -2064,7 +2357,7 @@
                                                     <div id="gacp-date-range" class="mt-2 hidden">
                                                         <label
                                                             class="form-label block text-sm mb-1 text-stone-800">ถ้ามี
-                                                            โปรดระบุ</label>
+                                                            โปรดระบุ วันที่เริ่มต้นและวันที่สิ้นสุด</label>
                                                         <div class="grid grid-cols-2 gap-2">
                                                             <div>
                                                                 <input type="date"
@@ -2145,7 +2438,8 @@
                                     <div class="form-section border border-gray-200 rounded-lg p-3 md:p-6 mb-4 md:mb-6">
                                         <h3
                                             class="section-title text-lg md:text-xl font-bold text-stone-800 mb-3 md:mb-4">
-                                            <i class="bi bi-trophy-fill me-2"></i>ข้อมูลสายพันธุ์กระท่อม
+                                            <i class="bi bi-trophy-fill me-2"></i>ข้อมูลสายพันธุ์กระท่อม<span
+                                                class="text-red-600">*</span>
                                         </h3>
 
                                         <!-- เลือกสายพันธุ์กระท่อม -->
@@ -2226,7 +2520,8 @@
                                     <div class="form-section border border-gray-200 rounded-lg p-3 md:p-6 mb-4 md:mb-6">
                                         <h3
                                             class="section-title text-lg md:text-xl font-bold text-stone-800 mb-3 md:mb-4">
-                                            <i class="bi bi-list-ol me-2"></i>ข้อมูลพื้นที่ย้อนหลัง 3ปี
+                                            <i class="bi bi-list-ol me-2"></i>ข้อมูลพื้นที่ย้อนหลัง 3ปี<span
+                                                class="text-red-600">*</span>
                                         </h3>
                                         <div class="flex flex-wrap gap-2">
                                             <div class="flex items-center">
@@ -3050,7 +3345,8 @@
                             onclick="adminCheckAuthAndInit()">
                             โหลดสถานะ / รีเฟรช
                         </button>
-                        <button id="admin-logout-btn" class="bg-red-500 text-white px-4 py-2 rounded-lg"
+                        <button id="admin-logout-btn"
+                            class="bg-gradient-to-r from-red-600 via-red-500 to-red-400 text-white px-4 py-2 rounded-lg shadow-lg hover:shadow-2xl hover:from-red-700 hover:to-red-500 transition-all duration-300"
                             onclick="adminForceLogout()">
                             ออกระบบ
                         </button>
@@ -3067,7 +3363,7 @@
                     onclick="showSection('admin-kratom', this)">ดูข้อมูลทั้งหมด</button>
 
                 <button class="nav-tab" data-target="admin-lounge" data-section-color="blue"
-                    onclick="showSection('admin-lounge', this)">2. คู่มือสำหรับตัวแทน</button>
+                    onclick="showSection('admin-lounge', this)">Thailand Kratom GACP</button>
             </nav>
 
             <div id="admin-kratom" class="content-section active">
@@ -3088,39 +3384,6 @@
                         <button id="btn-fetch-merged" class="blue-button py-3" onclick="adminFetchMerged()">
                             ดึงข้อมูลรวม (Merge)
                         </button>
-                    </div>
-
-                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                        <h4 class="text-sm font-semibold text-yellow-800 mb-3">🔧 เครื่องมือทดสอบระบบ</h4>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
-                            <button id="btn-simple-test" class="bg-yellow-500 text-white py-2 px-3 rounded text-sm"
-                                onclick="adminSimpleTest()">
-                                ทดสอบ Basic
-                            </button>
-                            <button id="btn-sheet-test" class="bg-orange-500 text-white py-2 px-3 rounded text-sm"
-                                onclick="adminTestSheetAccess()">
-                                ทดสอบ Sheet Access
-                            </button>
-                            <button id="btn-admin-conn" class="bg-red-500 text-white py-2 px-3 rounded text-sm"
-                                onclick="testAdminConnection()">
-                                ทดสอบ Admin Connection
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- เพิ่มในส่วน admin-controls หลังจากปุ่มทดสอบเดิม -->
-                    <div class="bg-red-50 border border-red-200 rounded-lg p-4 mt-4">
-                        <h4 class="text-sm font-semibold text-red-800 mb-3">🚨 ทดสอบ getAllFarmers โดยตรง</h4>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-                            <button id="btn-direct-getAll" class="bg-red-600 text-white py-2 px-3 rounded text-sm"
-                                onclick="directTestGetAllFarmers()">
-                                ทดสอบ getAllFarmers โดยตรง
-                            </button>
-                            <button id="btn-debug-getAll" class="bg-purple-600 text-white py-2 px-3 rounded text-sm"
-                                onclick="testGetAllFarmersDebug()">
-                                ทดสอบ getAllFarmersDebug
-                            </button>
-                        </div>
                     </div>
 
                     <div class="flex gap-3">
@@ -3151,10 +3414,106 @@
                 </div>
             </div>
 
-            <div id="admin-lounge" class="content-section hidden">
-                <h2>คู่มือสำหรับตัวแทน</h2>
-                <div class="p-4 bg-white border rounded">
-                    <p class="text-sm text-stone-600">คู่มือ / คำแนะนำสำหรับผู้ใช้งานตัวแทน (Placeholder)</p>
+            <div id="admin-lounge" class="content-section hidden bg-slate-100 font-sans">
+                <!-- Sidebar -->
+                <div id="gacp-sidebar" class="bg-slate-900 text-white shadow-2xl flex flex-col">
+                    <div class="flex items-center justify-between p-6 border-b border-slate-800 bg-slate-900">
+                        <h1 class="text-xl font-bold flex items-center gap-2 text-emerald-400">
+                            <i data-lucide="leaf" class="w-6 h-6"></i> GACP <span
+                                class="text-[10px] bg-emerald-500/20 px-2 py-0.5 rounded text-emerald-300">v1.0</span>
+                        </h1>
+                        <button onclick="toggleGACPSidebar(false)" class="md:hidden p-1 hover:bg-slate-800 rounded">
+                            <i data-lucide="x" class="w-6 h-6"></i>
+                        </button>
+                    </div>
+                    <nav id="gacp-menu" class="mt-2 flex-1 overflow-y-auto custom-scrollbar">
+                        <!-- Menu items will be injected here -->
+                    </nav>
+                </div>
+
+                <!-- Mobile Sidebar Overlay -->
+                <div class="gacp-sidebar-overlay" onclick="toggleGACPSidebar(false)"></div>
+
+                <!-- Main Content -->
+                <main class="flex-1 overflow-y-auto p-4 md:p-8 lg:p-12 custom-scrollbar relative w-full">
+                    <!-- Mobile Menu Trigger -->
+                    <button onclick="toggleGACPSidebar(true)"
+                        class="md:hidden absolute top-4 left-4 p-2 bg-white rounded-lg shadow-md z-40 text-slate-700">
+                        <i data-lucide="menu" class="w-6 h-6"></i>
+                    </button>
+
+                    <!-- Header Section -->
+                    <div
+                        class="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4 md:gap-6 mt-12 md:mt-0">
+                        <div>
+                            <h1 class="text-3xl md:text-4xl font-black text-slate-900 tracking-tighter">Thailand Kratom
+                                GACP System</h1>
+                            <p
+                                class="text-slate-500 font-bold text-xs uppercase tracking-[0.2em] mt-2 flex items-center gap-2">
+                                <span class="w-8 h-[2px] bg-emerald-500"></span>
+                                ระบบตรวจรับรองมาตรฐานพืชกระท่อม
+                            </p>
+                        </div>
+                        <div class="flex gap-4">
+                            <button onclick="exportToPDF()"
+                                class="hidden md:flex items-center gap-2.5 bg-white text-slate-700 px-8 py-4 rounded-3xl font-black text-sm border border-slate-200 shadow-sm hover:bg-slate-50 transition-all active:scale-95">
+                                <i data-lucide="download" class="w-5 h-5"></i> รายงาน PDF
+                            </button>
+                            <button id="gacp-save-btn" onclick="saveGACPData()"
+                                class="flex items-center gap-2.5 px-8 py-4 rounded-3xl font-black text-sm shadow-xl transition-all active:scale-95 bg-emerald-600 text-white shadow-emerald-600/30 hover:bg-emerald-700">
+                                <i data-lucide="save" class="w-5 h-5"></i>
+                                <span>บันทึกข้อมูล</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Content Area -->
+                    <div id="gacp-content-area" class="animate-in fade-in duration-500">
+                        <!-- Dashboard or Sections will be rendered here -->
+                    </div>
+                </main>
+
+                <!-- Criteria Modal Overlay -->
+                <div id="gacp-criteria-modal"
+                    class="fixed inset-0 bg-black/50 z-[60] hidden flex items-center justify-center p-4">
+                    <div
+                        class="bg-slate-900 text-white rounded-[2rem] p-8 md:p-10 shadow-2xl border border-slate-700 max-w-4xl w-full max-h-[90vh] overflow-y-auto animate-in zoom-in duration-300 relative">
+                        <div class="flex justify-between items-center mb-8">
+                            <h3 class="text-xl font-black flex items-center gap-4">
+                                <i data-lucide="alert-circle" class="text-amber-400 w-7 h-7"></i>
+                                ตารางค่ามาตรฐานความปลอดภัย
+                            </h3>
+                            <button onclick="toggleCriteriaModal(false)"
+                                class="bg-slate-800 p-2.5 rounded-full hover:bg-slate-700 transition-colors"><i
+                                    data-lucide="x" class="w-5 h-5"></i></button>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-6">
+                            <div class="flex justify-between items-center border-b border-slate-800 pb-4"><span
+                                    class="text-slate-400 font-bold">ตะกั่ว (Pb)</span><span
+                                    class="font-mono text-emerald-400 font-black bg-emerald-400/10 px-3 py-1 rounded-lg text-sm">ไม่เกิน
+                                    10.0 มก./กก.</span></div>
+                            <div class="flex justify-between items-center border-b border-slate-800 pb-4"><span
+                                    class="text-slate-400 font-bold">สารหนู (As)</span><span
+                                    class="font-mono text-emerald-400 font-black bg-emerald-400/10 px-3 py-1 rounded-lg text-sm">ไม่เกิน
+                                    5.0 มก./กก.</span></div>
+                            <div class="flex justify-between items-center border-b border-slate-800 pb-4"><span
+                                    class="text-slate-400 font-bold">ปรอท (Hg)</span><span
+                                    class="font-mono text-emerald-400 font-black bg-emerald-400/10 px-3 py-1 rounded-lg text-sm">ไม่เกิน
+                                    0.5 มก./กก.</span></div>
+                            <div class="flex justify-between items-center border-b border-slate-800 pb-4"><span
+                                    class="text-slate-400 font-bold">แคดเมียม (Cd)</span><span
+                                    class="font-mono text-emerald-400 font-black bg-emerald-400/10 px-3 py-1 rounded-lg text-sm">ไม่เกิน
+                                    0.3 มก./กก.</span></div>
+                            <div class="flex justify-between items-center border-b border-slate-800 pb-4"><span
+                                    class="text-slate-400 font-bold">แมงกานีส (Mn)</span><span
+                                    class="font-mono text-emerald-400 font-black bg-emerald-400/10 px-3 py-1 rounded-lg text-sm">ไม่เกิน
+                                    200.0 มก./กก.</span></div>
+                            <div class="flex justify-between items-center border-b border-slate-800 pb-4"><span
+                                    class="text-slate-400 font-bold">DDT / Endosulfan</span><span
+                                    class="font-mono text-emerald-400 font-black bg-emerald-400/10 px-3 py-1 rounded-lg text-sm">1.0
+                                    / 3.0 มก./กก.</span></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -7660,110 +8019,6 @@
                 }
             };
 
-            // ---------- Test / debug actions ----------
-            window.testAdminConnection = function () {
-                if (!isAdminSession()) {
-                    if (typeof showMessageBox === 'function') showMessageBox('❌ สิทธิ์ไม่เพียงพ��', 'คุณไม่มีสิทธิ์เข้าถึงฟังก์ชันนี้');
-                    return;
-                }
-
-                const token = sessionStorage.getItem('sessionToken') || '';
-
-                if (typeof isAppsScriptReady === 'function' && !isAppsScriptReady('Admin Test')) return;
-
-                setAdminControlsDisabled(true);
-                google.script.run
-                    .withSuccessHandler(result => {
-                        setAdminControlsDisabled(false);
-                        console.log('Test result:', result);
-                        if (typeof showMessageBox === 'function') showMessageBox('🔍 ผลการทดสอบ Admin', `<pre style="white-space:pre-wrap;">${escapeHtml(JSON.stringify(result, null, 2))}</pre>`);
-                    })
-                    .withFailureHandler(err => {
-                        setAdminControlsDisabled(false);
-                        console.error('Test failed:', err);
-                        if (typeof showMessageBox === 'function') showMessageBox('❌ ทดสอบล้มเหลว', escapeHtml((err && err.message) || 'Unknown error'));
-                    })
-                    .testAdminAccess(token);
-            };
-
-            window.adminTestSheetAccess = function () {
-                if (!isAdminSession()) {
-                    if (typeof showMessageBox === 'function') showMessageBox('❌ สิทธิ์ไม่เพียงพอ', 'คุณไม่มีสิทธิ์เข้าถึงฟังก์ชันนี้');
-                    return;
-                }
-                if (typeof isAppsScriptReady === 'function' && !isAppsScriptReady('Sheet Test')) return;
-
-                setAdminControlsDisabled(true);
-                google.script.run
-                    .withSuccessHandler(result => {
-                        setAdminControlsDisabled(false);
-                        console.log('Sheet access test result:', result);
-                        if (typeof showMessageBox === 'function') showMessageBox('📊 ผลการทดสอบ Sheet Access', `<pre style="white-space:pre-wrap;">${escapeHtml(JSON.stringify(result, null, 2))}</pre>`);
-                    })
-                    .withFailureHandler(err => {
-                        setAdminControlsDisabled(false);
-                        console.error('Sheet test failed:', err);
-                        if (typeof showMessageBox === 'function') showMessageBox('❌ ทดสอบ Sheet ล้มเหลว', escapeHtml((err && err.message) || 'Unknown error'));
-                    })
-                    .testSheetAccessPublic();
-            };
-
-            window.adminSimpleTest = function () {
-                if (typeof isAppsScriptReady === 'function' && !isAppsScriptReady('Simple Test')) return;
-                setAdminControlsDisabled(true);
-                google.script.run
-                    .withSuccessHandler(result => {
-                        setAdminControlsDisabled(false);
-                        if (typeof showMessageBox === 'function') showMessageBox('✅ ทดสอบ Simple', `ผลลัพธ์: ${escapeHtml(JSON.stringify(result))}`);
-                    })
-                    .withFailureHandler(err => {
-                        setAdminControlsDisabled(false);
-                        if (typeof showMessageBox === 'function') showMessageBox('❌ Simple Test ล้มเหลว', escapeHtml((err && err.message) || 'Unknown error'));
-                    })
-                    .testPing();
-            };
-
-            window.directTestGetAllFarmers = function () {
-                if (!isAdminSession()) {
-                    if (typeof showMessageBox === 'function') showMessageBox('❌ สิทธิ์ไม่เพียงพอ', 'คุณไม่มีสิทธิ์เข้าถึงฟังก์ชันนี้');
-                    return;
-                }
-                setAdminControlsDisabled(true);
-                const token = sessionStorage.getItem('sessionToken') || '';
-                google.script.run
-                    .withSuccessHandler(result => {
-                        setAdminControlsDisabled(false);
-                        console.log('DIRECT TEST - Success handler called', result);
-                        if (typeof showMessageBox === 'function') showMessageBox('🔍 ผลการทดสอบโดยตรง', `<pre style="white-space: pre-wrap;">${escapeHtml(JSON.stringify(result, null, 2))}</pre>`);
-                    })
-                    .withFailureHandler(err => {
-                        setAdminControlsDisabled(false);
-                        console.error('DIRECT TEST - Failure:', err);
-                        if (typeof showMessageBox === 'function') showMessageBox('❌ ทดสอบล้มเหลว', escapeHtml((err && err.message) || 'Unknown error'));
-                    })
-                    .getAllFarmers(token);
-            };
-
-            window.testGetAllFarmersDebug = function () {
-                if (!isAdminSession()) {
-                    if (typeof showMessageBox === 'function') showMessageBox('❌ สิทธิ์ไม่เพียงพอ', 'คุณไม่มีสิทธิ์เข้าถึงฟังก์ชันนี้');
-                    return;
-                }
-                setAdminControlsDisabled(true);
-                const token = sessionStorage.getItem('sessionToken') || '';
-                google.script.run
-                    .withSuccessHandler(result => {
-                        setAdminControlsDisabled(false);
-                        console.log('DEBUG TEST - Success:', result);
-                        if (typeof showMessageBox === 'function') showMessageBox('🔍 Debug Test Results', `<pre style="white-space:pre-wrap;">${escapeHtml(JSON.stringify(result, null, 2))}</pre>`);
-                    })
-                    .withFailureHandler(err => {
-                        setAdminControlsDisabled(false);
-                        console.error('DEBUG TEST - Failure:', err);
-                        if (typeof showMessageBox === 'function') showMessageBox('❌ Debug Test ล้มเหลว', escapeHtml((err && err.message) || 'Unknown error'));
-                    })
-                    .getAllFarmersDebug(token);
-            };
 
             // Expose minimal debug helpers only in development mode
             // Production deployments should remove this or gate it with environment check
@@ -7967,6 +8222,588 @@
             console.log('✅ PWA installed successfully');
             deferredPrompt = null;
         });
+    </script>
+    <script>
+        // =============================================
+        // GACP SYSTEM LOGIC (Converted from React)
+        // =============================================
+
+        // --- 1. State & Constants ---
+
+        const GACP_MENU_ITEMS = [
+            { id: 'dashboard', label: 'Dashboard & Analytics', icon: 'layout-dashboard' },
+            { id: 'quality-assurance', label: '1. การประกันคุณภาพ', icon: 'clipboard-check', sections: ['quality-assurance'] },
+            { id: 'personnel', label: '2. บุคลากร', icon: 'user-check', sections: ['personnel'] },
+            { id: 'hygiene', label: '3. สุขลักษณะส่วนบุคคล', icon: 'sparkles', sections: ['hygiene-dressing', 'hygiene-behavior', 'hygiene-health'] },
+            { id: 'site', label: '4. มาตรฐานพื้นที่ปลูก', icon: 'map-pin', sections: ['site-soil', 'site-physical'] },
+            { id: 'processing', label: '5. สถานที่แปรรูปเบื้องต้นและบรรจุ', icon: 'building-2', sections: ['processing-location', 'processing-zoning', 'processing-utilities'] },
+            { id: 'tools', label: '6. มาตรฐานอุปกรณ์', icon: 'wrench', sections: ['tools-design', 'tools-maint', 'tools-waste'] },
+            { id: 'fertilizer', label: '7. การจัดการปุ๋ย', icon: 'leaf', sections: ['fertilizer-reg', 'fertilizer-usage', 'fertilizer-storage'] },
+            { id: 'water', label: '8. มาตรฐานการจัดการน้ำ', icon: 'droplets', sections: ['water-quality', 'water-risk', 'water-system'] },
+            { id: 'documents', label: '9. การจัดการเอกสาร', icon: 'file-text', sections: ['docs-sop', 'docs-records', 'docs-trace'] },
+            { id: 'harvest', label: '10. คุณภาพการเก็บเกี่ยว', icon: 'scissors', sections: ['harvest-standard', 'harvest-pests', 'harvest-ops', 'harvest-logistics'] },
+            { id: 'pre-processing', label: '11. กระบวนการแปรรูปเบื้องต้น', icon: 'settings', sections: ['pre-processing-raw', 'pre-processing-drying', 'pre-processing-storage', 'pre-processing-standards'] },
+            { id: 'packaging', label: '12. การบรรจุและการติดฉลาก', icon: 'package-check', sections: ['packaging-std', 'packaging-finished', 'packaging-label'] },
+            { id: 'transport', label: '13. การจัดเก็บและการขนย้าย', icon: 'truck', sections: ['transport-env', 'transport-qc', 'transport-trace'] },
+        ];
+
+        const GACP_CHECKLIST_ITEMS = {
+            'quality-assurance': ["แผนควบคุมการผลิตภาพรวม (CP/CCP)", "การเตรียมแปลงและเพาะพันธุ์", "การส่งเสริมการเจริญเติบโต", "การควบคุมศัตรูพืช", "การจัดการเพื่อความปลอดภัย", "การเก็บเกี่ยวและหลังเก็บเกี่ยว", "การขนย้ายวัตถุดิบ", "การอบรมพนักงาน"],
+            'personnel': ["ความรู้ปัจจัยการผลิตและความปลอดภัย", "ทักษะการปลูกและดูแลรักษา", "ทักษะการเก็บเกี่ยว", "ทักษะการแปรรูป", "การเก็บรักษาวัตถุดิบ", "การรักษาคุณภาพหลังเก็บเกี่ยว"],
+            'hygiene-dressing': ["ชุดปฏิบัติงานในแปลง สะอาด ปลอดภัย", "ชุดปฏิบัติงานแปรรูป (หมวก/หน้ากาก/ถุงมือ)", "งดสวมเครื่องประดับขณะแปรรูป", "อุปกรณ์ PPE สำหรับสารชีวภัณฑ์"],
+            'hygiene-behavior': ["การล้างมือถูกต้องและสม่ำเสมอ", "เขตปลอดบุหรี่และอาหารในจุดผลิต", "การควบคุมสุขอนามัยบุคคลภายนอก"],
+            'hygiene-health': ["ตรวจสุขภาพประจำปี", "นโยบายการลาป่วย (ท้องเสีย/แผลเปิด)", "การอบรมการใช้ชุดป้องกัน"],
+            'site-soil': ["ผลตรวจโลหะหนัก 5 ชนิด", "ผลตรวจสารเคมีกำจัดศัตรูพืช", "หลักฐานการวิเคราะห์ดินรายปี", "แผนบริหารความเสี่ยงภัยธรรมชาติ"],
+            'site-physical': ["แนวกันชน/รั้วรอบแปลง", "การจัดการขยะ/สิ่งปฏิกูลในฟาร์ม", "ระยะห่างจากแหล่งมลพิษ"],
+            'processing-location': ["สถานที่สะอาด ไร้กลิ่น/ควัน", "โครงสร้างแข็งแรง กันสัตว์/แมลง", "วัสดุผิวสัมผัสล้างทำความสะอาดง่าย"],
+            'processing-zoning': ["ผังการไหลแบบทางเดียว", "แยกโซน ล้าง/ผลิต/บรรจุ", "พื้นที่กักกันวัตถุดิบแยกชัดเจน", "จุดเปลี่ยนเครื่องแต่งกายพนักงาน"],
+            'processing-utilities': ["น้ำสะอาดและถังเก็บมิดชิด", "ระบบระบายอากาศ/กรองอากาศ", "แสงสว่างเพียงพอและมีฝาครอบไฟ", "อ่างล้างมือพร้อมน้ำยาฆ่าเชื้อ"],
+            'tools-design': ["อุปกรณ์สัมผัสพืชสะอาด", "วัสดุ Food Grade ไม่เป็นสนิม", "ออกแบบให้ถอดล้างทำความสะอาดง่าย"],
+            'tools-maint': ["เครื่องชั่งมีความเที่ยงตรง", "ใบสอบเทียบประจำปี (Calibration)", "บันทึกการซ่อมบำรุงรักษา"],
+            'tools-waste': ["ถังขยะปิดมิดชิดกันรั่ว", "ป้ายกำกับถังขยะชัดเจน", "ทางขนย้ายของเสียแยกจากผลผลิต", "กำจัดขยะทิ้งทุกวัน"],
+            'fertilizer-reg': ["ปุ๋ยมีเลขทะเบียน DOA ถูกต้อง", "ใบขึ้นทะเบียน (กรณีผลิตเอง)", "ผลตรวจโลหะหนักในปุ๋ยหมัก"],
+            'fertilizer-usage': ["ใช้ตามความต้องการพืช", "กันปุ๋ยปนเปื้อนเชื้อโรคสู่ใบ", "ห้ามใช้สิ่งขับถ่ายคน", "ปุ๋ยอินทรีย์ย่อยสลายสมบูรณ์แล้ว"],
+            'fertilizer-storage': ["แยกพื้นที่เก็บ/ผสมเป็นสัดส่วน", "ไม่ปนเปื้อนสู่แหล่งน้ำ"],
+            'water-quality': ["ผลตรวจโลหะหนักผ่านเกณฑ์", "ผลตรวจสารเคมีกำจัดศัตรูพืช", "น้ำล้างคุณภาพระดับน้ำดื่ม", "รายงานผลตรวจน้ำประจำปี"],
+            'water-risk': ["แผนสุ่มตรวจบ่อพักน้ำ", "ประเมินความเสี่ยงมลพิษข้างเคียง", "ไม่ใช้น้ำเสียโรงงาน/ชุมชน"],
+            'water-system': ["วิธีการให้น้ำเหมาะสม", "ระบบบำบัดน้ำทิ้งก่อนปล่อย"],
+            'docs-sop': ["SOP การปลูก/ธาตุอาหาร", "SOP ศัตรูพืช/ระบบน้ำ", "SOP หลังเก็บเกี่ยว/บด", "SOP บรรจุ/ขนส่ง/ของเสีย", "SOP ฝึกอบรม/บันทึก"],
+            'docs-records': ["ประวัติที่ดิน 3 ปี", "บันทึกกิจกรรมประจำวัน", "บันทึกปัจจัยการผลิต", "บันทึกสารชีวภัณฑ์", "บันทึกสภาพอากาศ"],
+            'docs-trace': ["หมายเลขรุ่นผลิต (Lot)", "เอกสารซื้อขายครบถ้วน", "บันทึกการประเมินย้อนหลัง", "บันทึกการทบทวนงาน", "เก็บเอกสารไว้อย่างน้อย 2 ปี"],
+            'harvest-standard': ["ป้องกันการปนสายพันธุ์", "ไม่กระทบชุมชน", "เกษตรเชิงอนุรักษ์"],
+            'harvest-pests': ["ระบบ IPM", "สารเคมีมีทะเบียน", "สารชีวภัณฑ์ปลอดภัย", "สอบเทียบเครื่องพ่น", "แยกที่เก็บสารเคมี"],
+            'harvest-ops': ["ระยะเก็บเหมาะสม", "เก็บตอนฟ้าแจ้ง", "คัดใบราทิ้ง", "กันวัชพืชปน"],
+            'harvest-logistics': ["ภาชนะสะอาดไม่วางพื้น", "ไม่วางซ้อนทับกันหนา", "พนักงานสะอาด", "ขนส่งทันทีกันฝุ่น"],
+            'pre-processing-raw': ["คุมอุณหภูมิวัตถุดิบ", "ล้างใบสะอาด", "คัดแยกก่อนเข้าผลิต"],
+            'pre-processing-drying': ["ทำแห้งทันที", "ระบบลดความชื้นดี", "ไม่แปรรูปปนพืชอื่น"],
+            'pre-processing-storage': ["คุมความชื้นที่เก็บ", "กันหนู/แมลงมิดชิด", "อุปกรณ์ไม่เป็นสนิม"],
+            'pre-processing-standards': ["มาตรฐานไทย/ต่างประเทศ", "แจ้งกรรมวิธีพิเศษ (ถ้ามี)"],
+            'packaging-std': ["บรรจุทันทีกันแสง", "วัสดุ Food Grade", "SOP การล้างภาชนะใช้ซ้ำ", "ที่เก็บภาชนะเปล่าสะอาด"],
+            'packaging-finished': ["วางบนพาเลทพลาสติก", "เว้นระยะจากผนัง", "แยกเก็บพืชอื่นชัดเจน"],
+            'packaging-label': ["ชื่อพืช/ส่วนที่ใช้", "ชื่อผู้ผลิต/แหล่งต้นกำเนิด", "เลขรุ่น/วันเก็บเกี่ยว/วันผลิต", "ปริมาณบรรจุชัดเจน", "หมึกพิมพ์คงทน"],
+            'transport-env': ["รถขนส่งกันแสง/ความชื้น", "คลังสินค้าคุมปัจจัยแวดล้อม", "กันปนเปื้อนระหว่างทาง"],
+            'transport-qc': ["ผลแล็บรายรุ่น (เชื้อ/เคมี)", "ตรวจความชื้น (Moisture)", "แผนการสุ่มตรวจชัดเจน"],
+            'transport-trace': ["เก็บตัวอย่างอ้างอิง 6 เดือน", "สืบค้นข้อมูลย้อนกลับได้ทันที"]
+        };
+
+        let gacpState = {
+            activeTab: 'dashboard',
+            farmerInfo: {
+                hasRepresentative: false,
+                representativeName: '',
+                firstName: '',
+                lastName: '',
+                location: '',
+                date: new Date().toISOString().split('T')[0],
+                gps: '13.7563, 100.5018'
+            },
+            notesData: {},
+            imagesData: {},
+            checkData: {},
+            isSaving: false
+        };
+
+        // Initialize checkData
+        Object.keys(GACP_CHECKLIST_ITEMS).forEach(k => {
+            gacpState.checkData[k] = Array(GACP_CHECKLIST_ITEMS[k].length).fill(false);
+        });
+
+        // --- 2. Helper Functions ---
+
+        function gacpCalculateProgress(sections) {
+            if (!sections || sections.length === 0) return 0;
+            let total = 0;
+            let completed = 0;
+            sections.forEach(s => {
+                if (gacpState.checkData[s]) {
+                    total += gacpState.checkData[s].length;
+                    completed += gacpState.checkData[s].filter(Boolean).length;
+                }
+            });
+            return Math.round((completed / total) * 100) || 0;
+        }
+
+        function gacpGetOverallStatus() {
+            const allSections = Object.keys(gacpState.checkData);
+            const p = gacpCalculateProgress(allSections);
+            if (p === 100) return { text: 'ผ่านเกณฑ์ดีเยี่ยม', color: 'text-emerald-500', bg: 'bg-emerald-500' };
+            if (p >= 80) return { text: 'ผ่านเกณฑ์พื้นฐาน', color: 'text-blue-500', bg: 'bg-blue-500' };
+            return { text: 'ต้องปรับปรุงแก้ไข', color: 'text-amber-500', bg: 'bg-amber-500' };
+        }
+
+        // --- 3. Render Functions ---
+
+        function renderGACPSidebar() {
+            const menuContainer = document.getElementById('gacp-menu');
+            if (!menuContainer) return;
+
+            menuContainer.innerHTML = GACP_MENU_ITEMS.map(item => `
+                <button onclick="setGACPActiveTab('${item.id}'); toggleGACPSidebar(false)" 
+                    class="w-full flex items-center gap-3 px-6 py-3.5 text-sm transition-all hover:bg-slate-800 
+                    ${gacpState.activeTab === item.id ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20' : 'text-slate-400'}">
+                    <i data-lucide="${item.icon}" class="w-[18px] h-[18px]"></i>
+                    <span class="text-left font-medium">${item.label}</span>
+                </button>
+            `).join('');
+
+            lucide.createIcons();
+        }
+
+        function renderGACPContent() {
+            const contentArea = document.getElementById('gacp-content-area');
+            if (!contentArea) return;
+
+            if (gacpState.activeTab === 'dashboard') {
+                contentArea.innerHTML = renderGACPDashboard();
+            } else {
+                const item = GACP_MENU_ITEMS.find(m => m.id === gacpState.activeTab);
+                if (item) {
+                    contentArea.innerHTML = renderGACPSectionPage(item);
+                }
+            }
+            lucide.createIcons({ root: contentArea });
+        }
+
+        function renderGACPDashboard() {
+            const overall = gacpGetOverallStatus();
+            const progress = gacpCalculateProgress(Object.keys(gacpState.checkData));
+            const passedCategories = GACP_MENU_ITEMS.slice(1).filter(m => gacpCalculateProgress(m.sections) === 100).length;
+            const issuesCount = Object.values(gacpState.checkData).flat().filter(v => v === false).length;
+
+            return `
+            <div class="max-w-6xl mx-auto space-y-10 animate-in fade-in duration-700 pb-20">
+                ${renderFarmerCard()}
+                
+                <div class="flex items-center gap-3 mb-2">
+                    <i data-lucide="bar-chart-3" class="text-slate-400 w-6 h-6"></i>
+                    <h2 class="text-lg font-black text-slate-700 uppercase tracking-widest">การวิเคราะห์ข้อมูลเชิงลึก</h2>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-2 bg-white p-10 rounded-[2.5rem] border border-slate-200 shadow-sm relative overflow-hidden flex flex-col justify-between">
+                         <div class="relative z-10">
+                            <div class="flex justify-between items-start mb-8">
+                                <span class="text-slate-500 font-black text-[11px] uppercase tracking-widest">คะแนนการประเมินรวม</span>
+                                <div class="p-3 rounded-2xl bg-slate-50 ${overall.color} shadow-inner">
+                                    <i data-lucide="alert-triangle" class="w-7 h-7"></i>
+                                </div>
+                            </div>
+                            <div class="flex flex-col gap-1 mb-6">
+                                <span class="text-slate-400 font-black text-[10px] uppercase tracking-[0.2em]">เกษตรกรผู้รับการตรวจ:</span>
+                                <h3 class="text-2xl font-black text-slate-800">
+                                  ${(gacpState.farmerInfo.firstName || gacpState.farmerInfo.lastName) ? `${gacpState.farmerInfo.firstName} ${gacpState.farmerInfo.lastName}` : "ยังไม่ได้ระบุชื่อ"}
+                                </h3>
+                            </div>
+                            <div class="flex items-end gap-3">
+                                <span class="text-8xl font-black text-slate-900 leading-none">${progress}</span>
+                                <span class="text-4xl font-black text-slate-200 mb-2">%</span>
+                            </div>
+                            <p class="mt-6 text-2xl font-black ${overall.color} flex items-center gap-3">
+                                ${overall.text}
+                                ${progress >= 80 ? '<i data-lucide="check-circle-2" class="w-6 h-6"></i>' : ''}
+                            </p>
+                        </div>
+                        
+                        <!-- Mini Charts -->
+                         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-10 relative z-10">
+                            ${[
+                    { label: 'บุคลากร', sec: ['personnel'] },
+                    { label: 'พื้นที่ปลูก', sec: ['site-soil', 'site-physical'] },
+                    { label: 'แปรรูป', sec: ['processing-location', 'processing-zoning', 'processing-utilities'] },
+                    { label: 'เอกสาร', sec: ['docs-sop', 'docs-records', 'docs-trace'] }
+                ].map(stat => {
+                    const p = gacpCalculateProgress(stat.sec);
+                    return `
+                                <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                                    <div class="flex justify-between items-center mb-1">
+                                        <span class="text-[10px] font-bold text-slate-400">${stat.label}</span>
+                                        <span class="text-[10px] font-black text-slate-700">${p}%</span>
+                                    </div>
+                                    <div class="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                                        <div class="bg-emerald-500 h-full" style="width: ${p}%"></div>
+                                    </div>
+                                </div>`;
+                }).join('')}
+                        </div>
+                        <div class="absolute -bottom-10 -right-10 opacity-[0.03] pointer-events-none">
+                             <i data-lucide="leaf" class="w-[300px] h-[300px]"></i>
+                        </div>
+                    </div>
+
+                    <div class="space-y-8">
+                        <div class="bg-emerald-600 p-10 rounded-[2.5rem] text-white shadow-2xl shadow-emerald-200 relative overflow-hidden group">
+                            <span class="text-emerald-200 font-black text-[11px] uppercase tracking-widest relative z-10">หมวดหมู่ที่ผ่านเกณฑ์</span>
+                            <p class="text-7xl font-black mt-6 relative z-10">${passedCategories}</p>
+                            <p class="text-sm font-bold text-emerald-100 mt-4 relative z-10">จากทั้งหมด ${GACP_MENU_ITEMS.length - 1} หมวดใหญ่</p>
+                             <i data-lucide="users" class="absolute -right-6 -bottom-6 text-white/10 w-[120px] h-[120px]"></i>
+                        </div>
+                         <div class="bg-slate-900 p-10 rounded-[2.5rem] text-white shadow-2xl shadow-slate-300 relative overflow-hidden group">
+                            <span class="text-slate-500 font-black text-[11px] uppercase tracking-widest relative z-10">จุดที่ต้องแก้ไขสะสม</span>
+                            <p class="text-7xl font-black mt-6 text-amber-500 relative z-10">${issuesCount}</p>
+                            <p class="text-sm font-bold text-slate-400 mt-4 relative z-10">รายการที่ยังไม่สมบูรณ์</p>
+                            <i data-lucide="alert-circle" class="absolute -right-6 -bottom-6 text-white/5 w-[120px] h-[120px]"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Access Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    ${GACP_MENU_ITEMS.slice(1).map(item => {
+                    const prog = gacpCalculateProgress(item.sections);
+                    return `
+                        <button onclick="setGACPActiveTab('${item.id}')"
+                            class="bg-white p-6 rounded-[2rem] border border-slate-200 hover:border-emerald-500 hover:shadow-2xl hover:-translate-y-2 transition-all text-left flex flex-col group relative overflow-hidden">
+                            <div class="flex justify-between items-start mb-6">
+                                <div class="p-4 rounded-2xl transition-all duration-300 ${prog === 100 ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' : 'bg-slate-100 text-slate-500 group-hover:bg-emerald-50'}">
+                                    <i data-lucide="${item.icon}" class="w-6 h-6"></i>
+                                </div>
+                                ${prog === 100 ? `<div class="bg-emerald-50 p-2 rounded-full"><i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-500"></i></div>` : ''}
+                            </div>
+                            <h4 class="font-black text-slate-800 text-sm group-hover:text-emerald-600 transition-colors line-clamp-2 mb-4 h-10 leading-snug">${item.label}</h4>
+                            <div class="mt-auto">
+                                <div class="flex items-center justify-between mb-2">
+                                     <span class="text-[10px] font-black text-slate-400 uppercase tracking-wider">ความสมบูรณ์</span>
+                                     <span class="text-[10px] font-black ${prog === 100 ? 'text-emerald-600' : 'text-slate-600'}">${prog}%</span>
+                                </div>
+                                <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden shadow-inner">
+                                    <div class="h-full transition-all duration-500 ${prog === 100 ? 'bg-emerald-500' : 'bg-slate-400 group-hover:bg-emerald-400'}" style="width: ${prog}%"></div>
+                                </div>
+                            </div>
+                        </button>`;
+                }).join('')}
+                </div>
+            </div>`;
+        }
+
+        function renderFarmerCard() {
+            return `
+            <div class="bg-white rounded-3xl p-8 shadow-sm border border-slate-200 mb-6 transition-all">
+                <div class="flex flex-col gap-8">
+                    <div class="flex flex-wrap items-center gap-4 border-b border-slate-100 pb-6">
+                         <div class="flex items-center gap-3 mr-4">
+                            <i data-lucide="users" class="text-emerald-500 w-6 h-6"></i>
+                            <span class="font-black text-slate-700 text-sm uppercase tracking-wider">สถานะการตรวจสอบ</span>
+                         </div>
+                         <div class="flex bg-slate-100 p-1.5 rounded-2xl">
+                            <button onclick="updateFarmerInfo('hasRepresentative', false)" 
+                                class="px-6 py-2.5 rounded-xl text-sm font-black transition-all ${!gacpState.farmerInfo.hasRepresentative ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}">
+                                ไม่มีตัวแทน
+                            </button>
+                             <button onclick="updateFarmerInfo('hasRepresentative', true)" 
+                                class="px-6 py-2.5 rounded-xl text-sm font-black transition-all ${gacpState.farmerInfo.hasRepresentative ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}">
+                                มีตัวแทน
+                            </button>
+                         </div>
+                         ${gacpState.farmerInfo.hasRepresentative ? `
+                         <div class="flex-1 min-w-[300px] animate-in slide-in-from-left duration-300">
+                            <input placeholder="โปรดระบุชื่อตัวแทน..." 
+                                class="w-full bg-emerald-50/50 border-2 border-emerald-100 rounded-2xl px-5 py-2.5 text-sm focus:border-emerald-500 focus:ring-0 outline-none font-medium placeholder:text-emerald-300"
+                                value="${gacpState.farmerInfo.representativeName}" 
+                                onchange="updateFarmerInfo('representativeName', this.value)">
+                         </div>` : ''}
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="space-y-6">
+                             <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">ชื่อเกษตรกร</label>
+                                    <div class="flex items-center gap-3 bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 group focus-within:border-emerald-500 transition-all">
+                                        <i data-lucide="user" class="text-slate-400 w-[18px] h-[18px]"></i>
+                                        <input class="w-full bg-transparent border-none p-0 focus:ring-0 outline-none font-bold text-slate-800" 
+                                            placeholder="ชื่อ..." value="${gacpState.farmerInfo.firstName}" onchange="updateFarmerInfo('firstName', this.value)">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">นามสกุล</label>
+                                    <div class="flex items-center gap-3 bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 group focus-within:border-emerald-500 transition-all">
+                                        <input class="w-full bg-transparent border-none p-0 focus:ring-0 outline-none font-bold text-slate-800"
+                                            placeholder="นามสกุล..." value="${gacpState.farmerInfo.lastName}" onchange="updateFarmerInfo('lastName', this.value)">
+                                    </div>
+                                </div>
+                             </div>
+                             <div>
+                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">ที่ตั้งแปลง / จังหวัด</label>
+                                <div class="flex items-center gap-3 bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 group focus-within:border-emerald-500 transition-all">
+                                    <i data-lucide="map-pin" class="text-slate-400 w-5 h-5"></i>
+                                    <input class="w-full bg-transparent border-none p-0 focus:ring-0 outline-none font-bold text-slate-800"
+                                        placeholder="ตำบล, อำเภอ, จังหวัด..." value="${gacpState.farmerInfo.location}" onchange="updateFarmerInfo('location', this.value)">
+                                </div>
+                             </div>
+                        </div>
+                        <div class="space-y-6 md:border-l border-slate-100 md:pl-8">
+                             <div>
+                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">วันที่เข้าตรวจสอบ</label>
+                                <div class="flex items-center gap-3 bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 group focus-within:border-emerald-500 transition-all">
+                                    <i data-lucide="calendar" class="text-slate-400 w-5 h-5"></i>
+                                    <input type="date" class="w-full bg-transparent border-none p-0 focus:ring-0 outline-none font-bold text-slate-800"
+                                        value="${gacpState.farmerInfo.date}" onchange="updateFarmerInfo('date', this.value)">
+                                </div>
+                             </div>
+                             <div>
+                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">พิกัดแปลง (GPS)</label>
+                                <div class="flex items-center justify-between bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3">
+                                    <div class="flex items-center gap-3">
+                                        <i data-lucide="map-pin" class="text-emerald-500 w-5 h-5"></i>
+                                        <span class="font-bold text-slate-800">${gacpState.farmerInfo.gps}</span>
+                                    </div>
+                                    <button onclick="updateGPSLocation()" class="text-xs font-black bg-emerald-100 text-emerald-700 px-4 py-2 rounded-xl hover:bg-emerald-200 transition-colors">อัปเดตตำแหน่ง</button>
+                                </div>
+                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        function renderGACPSectionPage(menuItem) {
+            const hasCriteria = menuItem.label.includes("พื้นที่ปลูก") || menuItem.label.includes("น้ำ");
+            return `
+            <div class="max-w-5xl mx-auto space-y-6 pb-24 animate-in fade-in duration-300">
+                <div class="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 border border-slate-200 overflow-hidden">
+                    <div class="p-8 border-b border-slate-100 bg-white flex flex-col md:flex-row md:items-center justify-between gap-6">
+                        <div class="flex gap-4 items-center">
+                            <div class="p-4 bg-emerald-500 rounded-2xl text-white shadow-lg shadow-emerald-500/30">
+                                <i data-lucide="${menuItem.icon}" class="w-8 h-8"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-2xl font-black text-slate-900 tracking-tight">${menuItem.label}</h2>
+                                <p class="text-slate-500 text-sm mt-1 font-bold">การตรวจสอบความถูกต้องตามหลักเกณฑ์ GAP ในหมวด${menuItem.label}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-6 bg-slate-50 p-5 rounded-3xl border border-slate-100">
+                            <div class="text-right">
+                                <div class="text-3xl font-black text-emerald-600">${gacpCalculateProgress(menuItem.sections)}%</div>
+                                <div class="text-[10px] text-slate-400 font-black uppercase tracking-widest">ความคืบหน้า</div>
+                            </div>
+                            ${hasCriteria ? `<button onclick="toggleCriteriaModal(true)" class="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white rounded-2xl text-sm font-black shadow-md shadow-emerald-500/30 hover:bg-emerald-700 transition-all"><i data-lucide="info" class="w-[18px] h-[18px]"></i> เกณฑ์มาตรฐาน</button>` : ''}
+                        </div>
+                    </div>
+                    
+                    <div class="p-6 md:p-10 space-y-10 bg-slate-50/20">
+                        ${menuItem.sections.map(section => `
+                            <div class="bg-white border border-slate-200 rounded-[2rem] overflow-hidden shadow-sm">
+                                <div class="bg-slate-50 px-8 py-4 border-b border-slate-100 flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                        <h3 class="font-black text-slate-800 text-xs uppercase tracking-widest">${section.replace('-', ' ')}</h3>
+                                    </div>
+                                    <div class="text-[10px] font-black text-slate-400">บันทึกแล้ว ${Object.keys(gacpState.notesData).filter(k => k.startsWith(section)).length} หมายเหตุ</div>
+                                </div>
+                                <div class="divide-y divide-slate-100">
+                                    ${(GACP_CHECKLIST_ITEMS[section] || []).map((label, idx) => renderChecklistItem(section, idx, label)).join('')}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        function renderChecklistItem(section, index, label) {
+            const noteKey = `${section}-${index}`;
+            const currentNote = gacpState.notesData[noteKey] || '';
+            const isChecked = gacpState.checkData[section][index];
+            const currentImages = gacpState.imagesData[noteKey] || 0;
+            const noteSafe = currentNote.replace(/"/g, '&quot;');
+
+            return `
+            <div class="group border-b border-slate-50 last:border-0 transition-all duration-200 overflow-hidden">
+                <div class="flex items-start justify-between p-5 group-hover:bg-emerald-50/20">
+                    <div class="flex items-start gap-4 flex-1">
+                        <span class="mt-1.5 flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 text-[10px] font-black text-slate-400 group-hover:bg-emerald-100 group-hover:text-emerald-600 transition-colors">${index + 1}</span>
+                        <div class="flex-1 pr-4">
+                            <span class="text-slate-700 block font-bold leading-relaxed">${label}</span>
+                            <div class="flex gap-4 mt-3">
+                                <button onclick="updateGACPImageCount('${noteKey}')" class="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400 hover:text-emerald-600 transition-colors">
+                                    <i data-lucide="camera" class="w-[14px] h-[14px]"></i> ${currentImages > 0 ? `รูปภาพ (${currentImages})` : 'เพิ่มรูปหลักฐาน'}
+                                </button>
+                                <button onclick="toggleNoteField('${noteKey}')" class="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider transition-colors ${currentNote ? 'text-amber-600' : 'text-slate-400 hover:text-amber-600'}">
+                                    <i data-lucide="message-square-plus" class="w-[14px] h-[14px]"></i> ${currentNote ? 'แก้ไขหมายเหตุ' : 'เพิ่มหมายเหตุ'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex pt-1.5 pl-4">
+                        <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleGACPCheck('${section}', ${index})" class="w-8 h-8 rounded-xl border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer shadow-sm transition-all">
+                    </div>
+                </div>
+                <!-- Note Field -->
+                <div id="note-field-${noteKey}" class="${currentNote ? 'block' : 'hidden'} px-5 pb-5 animate-in slide-in-from-top-2 duration-300">
+                     <div class="ml-10 bg-amber-50/50 border border-amber-100 rounded-2xl p-3">
+                         <div class="flex items-center justify-between mb-2">
+                            <span class="text-[10px] font-black text-amber-600 uppercase tracking-widest flex items-center gap-2"><i data-lucide="file-text" class="w-3 h-3"></i> หมายเหตุ / ข้อเสนอแนะ</span>
+                         </div>
+                         <textarea rows="2" class="w-full bg-white border-none rounded-xl p-3 text-sm focus:ring-2 focus:ring-amber-200 outline-none text-slate-700 placeholder:text-slate-300"
+                            placeholder="พิมพ์ข้อความที่นี่..." onchange="updateGACPNote('${section}', ${index}', this.value)">${currentNote}</textarea>
+                     </div>
+                </div>
+            </div>`;
+        }
+
+        // --- 4. Event Handlers & API ---
+
+        function setGACPActiveTab(tabId) {
+            gacpState.activeTab = tabId;
+            renderGACPSidebar();
+            renderGACPContent();
+        }
+
+        function toggleGACPSidebar(open) {
+            const sb = document.getElementById('gacp-sidebar');
+            const overlay = document.querySelector('.gacp-sidebar-overlay');
+            if (open) {
+                sb.classList.add('open');
+                if (overlay) overlay.classList.add('active');
+            } else {
+                sb.classList.remove('open');
+                if (overlay) overlay.classList.remove('active');
+            }
+        }
+
+        function updateFarmerInfo(field, value) {
+            gacpState.farmerInfo[field] = value;
+            if (document.getElementById('gacp-menu')) {
+                // re-render if needed, mostly for dashboard
+                if (gacpState.activeTab === 'dashboard') renderGACPContent();
+            }
+        }
+
+        function toggleGACPCheck(section, index) {
+            gacpState.checkData[section][index] = !gacpState.checkData[section][index];
+            // Re-render only necessary parts could be optimized, but full re-render safest for progress bars
+            renderGACPContent();
+        }
+
+        function updateGACPNote(section, index, value) {
+            gacpState.notesData[`${section}-${index}`] = value;
+        }
+
+        function updateGACPImageCount(key) {
+            gacpState.imagesData[key] = (gacpState.imagesData[key] || 0) + 1;
+            renderGACPContent();
+        }
+
+        function toggleNoteField(key) {
+            const el = document.getElementById(`note-field-${key}`);
+            if (el) {
+                if (el.classList.contains('hidden')) el.classList.remove('hidden');
+                else el.classList.add('hidden');
+            }
+        }
+
+        function toggleCriteriaModal(show) {
+            const m = document.getElementById('gacp-criteria-modal');
+            if (m) {
+                if (show) m.classList.remove('hidden');
+                else m.classList.add('hidden');
+            }
+        }
+
+        // Export/Save/Init
+        function exportToPDF() {
+            window.print();
+        }
+
+        async function updateGPSLocation() {
+            if (!navigator.geolocation) {
+                alert('เบราว์เซอร์ของคุณไม่รองรับการระบุตำแหน่ง');
+                return;
+            }
+
+            const btn = document.querySelector('button[onclick="updateGPSLocation()"]');
+            const originalText = btn ? btn.innerText : 'อัปเดตตำแหน่ง';
+            if (btn) btn.innerText = 'กำลังค้นหา...';
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const coords = `${position.coords.latitude.toFixed(6)}, ${position.coords.longitude.toFixed(6)}`;
+                    updateFarmerInfo('gps', coords);
+                    if (btn) btn.innerText = originalText;
+                    if (gacpState.activeTab === 'dashboard') renderGACPContent();
+                },
+                (error) => {
+                    console.error('GPS Error:', error);
+                    alert('ไม่สามารถระบุตำแหน่งได้: ' + error.message);
+                    if (btn) btn.innerText = originalText;
+                },
+                { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+            );
+        }
+        function saveGACPData() {
+            if (gacpState.isSaving) return;
+
+            const btn = document.getElementById('gacp-save-btn');
+            const originalContent = btn.innerHTML;
+
+            // Set Loading UI
+            gacpState.isSaving = true;
+            btn.innerHTML = '<div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> กำลังบันทึก...';
+            btn.disabled = true;
+            btn.classList.add('bg-slate-400');
+
+            const token = sessionStorage.getItem('sessionToken') || '';
+
+            google.script.run
+                .withSuccessHandler(result => {
+                    gacpState.isSaving = false;
+                    btn.innerHTML = originalContent;
+                    btn.disabled = false;
+                    btn.classList.remove('bg-slate-400');
+
+                    if (result.success) {
+                        if (typeof showMessageBox === 'function') showMessageBox('บันทึกสำเร็จ', 'ข้อมูลถูกบันทึกเรียบร้อยแล้ว');
+                        else alert('บันทึกสำเร็จ');
+                    } else {
+                        if (typeof showMessageBox === 'function') showMessageBox('เกิดข้อผิดพลาด', result.message);
+                        else alert('เกิดข้อผิดพลาด: ' + result.message);
+                    }
+                })
+                .withFailureHandler(err => {
+                    gacpState.isSaving = false;
+                    btn.innerHTML = originalContent;
+                    btn.disabled = false;
+                    btn.classList.remove('bg-slate-400');
+
+                    if (typeof showMessageBox === 'function') showMessageBox('เกิดข้อผิดพลาด', 'Server Error: ' + err.message);
+                    else alert('Server Error: ' + err.message);
+                })
+                .saveGACPData(gacpState, token);
+        }
+
+        function initGACP() {
+            renderGACPSidebar();
+            renderGACPContent();
+
+            // Hook into the visibility of admin-lounge to re-render icons
+            const obs = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    if (mutation.target.id === 'admin-lounge' && !mutation.target.classList.contains('hidden')) {
+                        renderGACPSidebar();
+                        renderGACPContent();
+                    }
+                });
+            });
+            const al = document.getElementById('admin-lounge');
+            if (al) obs.observe(al, { attributes: true, attributeFilter: ['class'] });
+        }
+
+        // Auto-run init
+        document.addEventListener('DOMContentLoaded', initGACP);
+
+        // Expose critical functions to window explicitly for safety
+        window.setGACPActiveTab = setGACPActiveTab;
+        window.toggleGACPSidebar = toggleGACPSidebar;
+        window.updateFarmerInfo = updateFarmerInfo;
+        window.toggleGACPCheck = toggleGACPCheck;
+        window.updateGACPNote = updateGACPNote;
+        window.updateGACPImageCount = updateGACPImageCount;
+        window.toggleNoteField = toggleNoteField;
+        window.toggleCriteriaModal = toggleCriteriaModal;
+        window.saveGACPData = saveGACPData;
+        window.exportToPDF = exportToPDF;
+        window.updateGPSLocation = updateGPSLocation;
+
     </script>
 </body>
 
