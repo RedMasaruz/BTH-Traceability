@@ -1667,20 +1667,35 @@
 
         <!-- MAIN MENU VIEW - UPDATED DESIGN -->
         <div id="main-menu-view" class="space-y-6 relative">
-            <!-- added relative so absolute button positions correctly -->
-            <!-- Admin floating button (top-right) -->
-            <button id="admin-floating-btn" onclick="adminCheckAuthAndInit()" title="ผู้ดูแลระบบ (Admin)"
-                aria-label="Admin"
-                class="absolute top-4 right-4 z-50 transform hover:scale-105 transition-transform duration-200"
-                style="width:72px; height:72px; border-radius:12px; background: linear-gradient(135deg,#0f766e,#10b981); box-shadow: 0 12px 30px rgba(16,185,129,0.18); display:flex; align-items:center; justify-content:center; flex-direction:column; color:white; border: none;">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor" stroke-width="1.6" style="width:34px;height:34px;color:white;">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M12 11c2.21 0 4-1.79 4-4S14.21 3 12 3 8 4.79 8 7s1.79 4 4 4zM6 20a6 6 0 0112 0" />
-                </svg>
-                <span
-                    style="font-size:11px; margin-top:2px; font-weight:700; color:rgba(255,255,255,0.95);">Admin</span>
-            </button>
+            <!-- ส่วนหัว (Navigation) -->
+            <nav class="bg-white shadow-md sticky top-0 z-50 -mx-4 -mt-4 sm:-mx-6 lg:-mx-8">
+                <div class="max-w-6xl mx-auto px-4">
+                    <div class="flex flex-wrap justify-between items-center py-3 gap-2">
+                        <div class="text-2xl font-bold text-green-600">
+                            BAANTHAIHERBCENTER
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2 sm:gap-4">
+                            <a href="#" class="hover:text-green-500 transition text-sm sm:text-base">หน้าแรก</a>
+                            <a href="#features"
+                                class="hover:text-green-500 transition text-sm sm:text-base">คุณสมบัติ</a>
+                            <a href="#about"
+                                class="hover:text-green-500 transition text-sm sm:text-base">เกี่ยวกับเรา</a>
+                            <a href="#contact"
+                                class="bg-blue-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg hover:bg-blue-700 transition text-sm sm:text-base">ติดต่อเรา</a>
+                            <button id="admin-nav-btn" onclick="adminCheckAuthAndInit()" title="ผู้ดูแลระบบ (Admin)"
+                                class="flex items-center gap-1 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-white transition hover:scale-105 text-sm sm:text-base"
+                                style="background: linear-gradient(135deg,#0f766e,#10b981);">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 sm:w-5 sm:h-5" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M12 11c2.21 0 4-1.79 4-4S14.21 3 12 3 8 4.79 8 7s1.79 4 4 4zM6 20a6 6 0 0112 0" />
+                                </svg>
+                                <span class="font-semibold">Admin</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </nav>
 
             <div class="text-center mb-10">
                 <h1 class="text-3xl font-extrabold text-stone-800 mb-3">
@@ -1739,7 +1754,7 @@
                     </div>
                     <h2 class="card-title">ระบบข้อมูลตัวแทน BTH</h2>
                     <p class="card-description">
-                        จัดการข้อมูลและผลการวิเคราะห์ค่าสาร สำหรับตัวแทนบริษัท
+                        จัดการข้อมูล
                     </p>
                     <div class="card-badge">
                         ระบบตัวแทน
@@ -3341,7 +3356,8 @@
                                 class="font-semibold"></span></p>
                     </div>
                     <div class="flex gap-2">
-                        <button id="admin-refresh-btn" class="search-button py-2 px-4 rounded-lg"
+                        <button id="admin-refresh-btn"
+                            class="bg-gradient-to-r from-green-600 via-green-500 to-green-400 text-white px-4 py-2 rounded-lg shadow-lg hover:shadow-2xl hover:from-green-700 hover:to-green-500 transition-all duration-300"
                             onclick="adminCheckAuthAndInit()">
                             โหลดสถานะ / รีเฟรช
                         </button>
@@ -3728,6 +3744,16 @@
                 fetchButton.disabled = false;
             }
             return true;
+        }
+
+        // =============================================
+        // MOBILE MENU TOGGLE
+        // =============================================
+        function toggleMobileMenu() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            if (mobileMenu) {
+                mobileMenu.classList.toggle('hidden');
+            }
         }
 
         // =============================================
