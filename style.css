@@ -1609,4 +1609,33 @@ hr {
         font-size: 1rem !important;
         margin-bottom: 0.75rem !important;
     }
+
+    /* =========================================
+       Fix for Species Section Layout Overlap
+       (Overrides inline styles from JS)
+       ========================================= */
+    #stem-sections .row {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+    }
+
+    #stem-sections .col-md-6 {
+        width: 100% !important;
+        grid-column: auto !important;
+    }
+
+    #stem-sections .input-group {
+        width: 100% !important;
+    }
+
+    #stem-sections .input-group-text {
+        padding: 4px 8px !important;
+        font-size: 0.75rem !important;
+    }
+
+    #stem-sections .variety-count {
+        font-size: 0.8rem !important;
+        padding: 4px 8px !important;
+    }
 }
