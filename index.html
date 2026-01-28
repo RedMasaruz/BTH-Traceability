@@ -3238,9 +3238,8 @@
 
                         if (result && result.success) {
                             showMessageBox("✅ บันทึกสำเร็จ!",
-                                `บันทึกข้อมูลการใช้ 4-7-16 ของ **${formData['b-fullname']}** เรียบร้อยแล้ว
-                                <br><br>แถวที่บันทึก: **${result.data?.row || 'N/A'}**
-                                <br>ชีท: **${result.data?.sheet || 'N/A'}**
+                                `บันทึกข้อมูลการใช้ 4-7-16 ของ **${formData['b-fullname']}** 
+                                เรียบร้อยแล้ว
                                 <br>เวลา: ${new Date().toLocaleTimeString('th-TH')}`
                             );
                             if (form) form.reset();
