@@ -1276,11 +1276,7 @@
                             <label for="a-fullname" class="block text-sm font-medium mb-1">ชื่อ-สกุล เกษตรกร</label>
                             <input type="text" id="a-fullname" placeholder="ชื่อ-สกุล" required class="w-full">
                         </div>
-                        <div>
-                            <label for="a-phone" class="block text-sm font-medium mb-1">หมายเลขโทรศัพท์ เกษตรกร</label>
-                            <input type="tel" id="a-phone" placeholder="หมายเลขโทรศัพท์" required pattern="[0-9]{9,15}"
-                                class="w-full">
-                        </div>
+
                     </div>
 
                     <label for="a-id" class="block text-sm font-medium mb-1">รหัสเกษตรกร: ตัวแทนเป็นผู้กำหนดรหัสเอง<span
@@ -1335,64 +1331,9 @@
                         </div>
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-medium mb-1">ระบบให้น้ำ<span
-                                class="text-xs text-red-500 ml-2">(เลือกได้มากกว่าหนึ่ง)</span></label>
-                        <div class="radio-group flex flex-wrap gap-2">
-                            <input type="checkbox" id="water-rain" name="a-watering" value="น้ำฝน" class="hidden"
-                                onchange="toggleOtherWateringInput()">
-                            <label for="water-rain" class="px-4 py-2 rounded-lg cursor-pointer">น้ำฝน</label>
 
-                            <input type="checkbox" id="water-irrigation" name="a-watering" value="ชลประทาน"
-                                class="hidden" onchange="toggleOtherWateringInput()">
-                            <label for="water-irrigation" class="px-4 py-2 rounded-lg cursor-pointer">ชลประทาน</label>
 
-                            <input type="checkbox" id="water-ground" name="a-watering" value="น้ำบาดาล" class="hidden"
-                                onchange="toggleOtherWateringInput()">
-                            <label for="water-ground" class="px-4 py-2 rounded-lg cursor-pointer">น้ำบาดาล</label>
 
-                            <input type="checkbox" id="water-sprinkler" name="a-watering" value="สปริงเกอร์"
-                                class="hidden" onchange="toggleOtherWateringInput()">
-                            <label for="water-sprinkler" class="px-4 py-2 rounded-lg cursor-pointer">สปริงเกอร์</label>
-
-                            <input type="checkbox" id="water-other" name="a-watering" value="อื่นๆ" class="hidden"
-                                onchange="toggleOtherWateringInput()">
-                            <label for="water-other" class="px-4 py-2 rounded-lg cursor-pointer">อื่นๆ (ระบุ)</label>
-                        </div>
-                        <input type="text" id="a-watering-other-text"
-                            placeholder="ระบุระบบให้น้ำอื่นๆ (เช่น สระน้ำ, น้ำจากบ่อพัก)" class="hidden mt-2 w-full">
-                    </div>
-
-                    <div>
-                        <h3 class="text-sm font-medium mb-1 pt-2 border-t border-stone-100 text-stone-700">
-                            วิธีให้ปุ๋ย<span class="text-xs text-red-500 ml-2">(เลือกได้มากกว่าหนึ่ง)</span></label>
-                            <div class="radio-group flex flex-wrap gap-2">
-                                <input type="checkbox" id="fert-organic" name="a-fertilizer-method" value="ปุ๋ยอินทรีย์"
-                                    class="hidden" onchange="toggleOtherFertilizerInput()">
-                                <label for="fert-organic"
-                                    class="px-4 py-2 rounded-lg cursor-pointer">ปุ๋ยอินทรีย์</label>
-
-                                <input type="checkbox" id="fert-chemical" name="a-fertilizer-method" value="ปุ๋ยเคมี"
-                                    class="hidden" onchange="toggleOtherFertilizerInput()">
-                                <label for="fert-chemical" class="px-4 py-2 rounded-lg cursor-pointer">ปุ๋ยเคมี</label>
-
-                                <input type="checkbox" id="fert-manure" name="a-fertilizer-method" value="ปุ๋ยคอก"
-                                    class="hidden" onchange="toggleOtherFertilizerInput()">
-                                <label for="fert-manure" class="px-4 py-2 rounded-lg cursor-pointer">ปุ๋ยคอก</label>
-
-                                <input type="checkbox" id="fert-volcanic" name="a-fertilizer-method" value="แร่ภูเขาไฟ"
-                                    class="hidden" onchange="toggleOtherFertilizerInput()">
-                                <label for="fert-volcanic"
-                                    class="px-4 py-2 rounded-lg cursor-pointer">แร่ภูเขาไฟ</label>
-
-                                <input type="checkbox" id="fert-other" name="a-fertilizer-method" value="อื่นๆ"
-                                    class="hidden" onchange="toggleOtherFertilizerInput()">
-                                <label for="fert-other" class="px-4 py-2 rounded-lg cursor-pointer">อื่นๆ (ระบุ)</label>
-                            </div>
-                            <input type="text" id="a-fertilizer-other-text"
-                                placeholder="โปรดระบุชนิดปุ๋ยอื่นๆ ที่ใช้ (เช่น ปุ๋ยน้ำชีวภาพ, ปุ๋ยชีวภาพ)"
-                                class="hidden mt-2 w-full">
-                    </div>
                 </div>
 
                 <div class="space-y-4 pt-4 border rounded-lg p-4">
@@ -1472,40 +1413,7 @@
                     </div>
                 </div>
 
-                <div class="space-y-4 pt-4 border rounded-lg p-4">
-                    <h3 class="text-lg font-semibold text-stone-700">ข้อมูลอื่นๆ และความยินยอม</h3>
-                    <textarea id="a-recentchem" rows="3"
-                        placeholder="ปุ๋ย/สารเคมีที่ใช้ใน 30 วันที่ผ่านมา (ชนิด + ปริมาณ + วันที่)"
-                        class="w-full"></textarea>
 
-                    <div class="pt-4 space-y-2">
-                        <p class="font-medium">ความยินยอม</p>
-                        <div class="flex flex-wrap items-center space-x-4">
-                            <label class="flex items-center">
-                                <input type="radio" name="a-consent-sample" value="ยอม" required
-                                    class="h-4 w-4 text-stone-800 border-gray-300 focus:ring-stone-500">
-                                <span class="ml-2 text-sm">ยินยอมให้เก็บตัวอย่างใบเพื่อวิเคราะห์</span>
-                            </label>
-                            <label class="flex items-center">
-                                <input type="radio" name="a-consent-sample" value="ไม่ยอม"
-                                    class="h-4 w-4 text-stone-800 border-gray-300 focus:ring-stone-500">
-                                <span class="ml-2 text-sm">ไม่ยินยอม</span>
-                            </label>
-                        </div>
-                        <div class="flex flex-wrap items-center space-x-4">
-                            <label class="flex items-center">
-                                <input type="radio" name="a-consent-data" value="ยอม" required
-                                    class="h-4 w-4 text-stone-800 border-gray-300 focus:ring-stone-500">
-                                <span class="ml-2 text-sm">ยินยอมให้ใช้ข้อมูลเพื่อรายงานผลรวมและวิจัย</span>
-                            </label>
-                            <label class="flex items-center">
-                                <input type="radio" name="a-consent-data" value="ไม่ยอม"
-                                    class="h-4 w-4 text-stone-800 border-gray-300 focus:ring-ring-stone-500">
-                                <span class="ml-2 text-sm">ไม่ยินยอม</span>
-                            </label>
-                        </div>
-                    </div>
-                </div>
 
                 <div class="space-y-4 pt-4 border rounded-lg p-4">
                     <h3 class="text-lg font-semibold text-stone-700">บันทึกหน้างาน</h3>
@@ -1525,13 +1433,7 @@
                             class="w-full"></textarea>
                     </div>
 
-                    <div class="flex items-center">
-                        <input type="checkbox" id="a-signature" required
-                            class="h-4 w-4 text-stone-800 border-gray-300 rounded focus:ring-stone-500">
-                        <label for="a-signature" class="ml-2 text-sm font-medium">
-                            ผู้รับ: ข้าพเจ้ายอมรับเงื่อนไขและยืนยันความถูกต้องของข้อมูล
-                        </label>
-                    </div>
+
                 </div>
 
                 <button type="submit"
@@ -2604,8 +2506,7 @@
                     return el;
                 };
 
-                const phone = getEl('a-phone').value.trim();
-                validateInput(phone, 'phone', 'เบอร์โทรศัพท์');
+
 
                 const farmerId = getEl('a-id').value.trim();
                 validateInput(farmerId, 'farmerId', 'รหัสเกษตรกร');
@@ -2644,7 +2545,7 @@
                     timestamp: new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' }),
                     'a-long-affiliation': (document.getElementById('a-long-affiliation') && document.getElementById('a-long-affiliation').value) || '',
                     'a-fullname': (document.getElementById('a-fullname') && document.getElementById('a-fullname').value.trim()) || '',
-                    'a-phone': phone,
+
                     'a-id': farmerId,
                     'a-address-tambon': (document.getElementById('a-address-tambon') && document.getElementById('a-address-tambon').value.trim()) || '',
                     'a-address-amphoe': (document.getElementById('a-address-amphoe') && document.getElementById('a-address-amphoe').value.trim()) || '',
@@ -2654,10 +2555,7 @@
                     'a-gpsy': (document.getElementById('a-gpsy') && document.getElementById('a-gpsy').value.trim()) || '',
                     'a-plotsize': parseFloat(document.getElementById('a-plotsize').value),
                     'a-cropspecies': (document.getElementById('a-cropspecies') && document.getElementById('a-cropspecies').value.trim()) || '',
-                    'a-watering': Array.from(form.querySelectorAll('input[name="a-watering"]:checked')).map(cb => cb.value).join(', '),
-                    'a-watering-other-text': (document.getElementById('a-watering-other-text') && document.getElementById('a-watering-other-text').value.trim()) || '',
-                    'a-fertilizer-method': Array.from(form.querySelectorAll('input[name="a-fertilizer-method"]:checked')).map(cb => cb.value).join(', '),
-                    'a-fertilizer-other-text': (document.getElementById('a-fertilizer-other-text') && document.getElementById('a-fertilizer-other-text').value.trim()) || '',
+
                     'a-long-receive-mineral-date': document.getElementById('a-long-receive-mineral-date').value,
                     'a-long-receive-mineral-amount': parsedMineralAmount,
                     'a-long-receive-nano-date': document.getElementById('a-long-receive-nano-date').value,
@@ -2667,20 +2565,11 @@
                     'a-datenano': document.getElementById('a-datenano').value,
                     'a-nanoliters': parseFloat(document.getElementById('a-nanoliters').value),
                     'a-premitra': (document.getElementById('a-premitra') && parseFloat(document.getElementById('a-premitra').value)) || '',
-                    'a-recentchem': (document.getElementById('a-recentchem') && document.getElementById('a-recentchem').value.trim()) || '',
-                    'a-consent-sample': form.querySelector('input[name="a-consent-sample"]:checked')?.value,
-                    'a-consent-data': form.querySelector('input[name="a-consent-data"]:checked')?.value,
                     'a-recorder': document.querySelector('input[name="a-recorder"]:checked')?.value || '',
-                    'a-onsitenotes': (document.getElementById('a-onsitenotes') && document.getElementById('a-onsitenotes').value.trim()) || '',
-                    'a-signature': document.getElementById('a-signature') && document.getElementById('a-signature').checked ? 'ยืนยัน' : 'ไม่ยืนยัน'
+                    'a-onsitenotes': (document.getElementById('a-onsitenotes') && document.getElementById('a-onsitenotes').value.trim()) || ''
                 };
 
-                if (!formData['a-watering'] || !formData['a-watering'].includes('อื่นๆ')) {
-                    delete formData['a-watering-other-text'];
-                }
-                if (!formData['a-fertilizer-method'] || !formData['a-fertilizer-method'].includes('อื่นๆ')) {
-                    delete formData['a-fertilizer-other-text'];
-                }
+
 
                 return formData;
             } catch (error) {
@@ -2706,15 +2595,7 @@
 
                 const formData = getSheetAFormData(form);
 
-                if (!formData['a-watering'] || formData['a-watering'].trim() === '') {
-                    showMessageBox("❌ ข้อมูลไม่ครบถ้วน!", "กรุณาเลือก **ระบบให้น้ำ** อย่างน้อย 1 ตัว");
-                    return;
-                }
 
-                if (!formData['a-fertilizer-method'] || formData['a-fertilizer-method'].trim() === '') {
-                    showMessageBox("❌ ข้อมูลไม่ครบถ้วน!", "กรุณาเลือก **วิธีใส่ปุ๋ย** อย่างน้อย 1 ตัว");
-                    return;
-                }
 
                 if (!formData['a-recorder'] || formData['a-recorder'].trim() === '') {
                     showMessageBox("❌ ข้อมูลไม่ครบถ้วน!", "กรุณาเลือก **ผู้บันทึก**");
