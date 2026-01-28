@@ -1662,4 +1662,39 @@ hr {
         gap: 0.5rem !important;
         width: 100% !important;
     }
+
+    /* =========================================
+       Fix for Mobile Header Layout
+       (Stack logo and nav vertical)
+       ========================================= */
+    #header-content {
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+        padding-top: 0.5rem !important;
+        padding-bottom: 0.5rem !important;
+    }
+
+    #header-logo {
+        width: 100% !important;
+        text-align: center !important;
+        font-size: 1.35rem !important;
+        /* Slightly smaller to fit single line if minimal space */
+    }
+
+    #header-links {
+        justify-content: center !important;
+        width: 100% !important;
+        gap: 0.5rem !important;
+    }
+
+    #header-links a {
+        font-size: 0.8rem !important;
+        padding: 4px 6px;
+    }
+
+    /* Adjust Admin button in header for mobile */
+    #admin-nav-btn {
+        padding: 4px 10px !important;
+        font-size: 0.8rem !important;
+    }
 }
