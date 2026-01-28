@@ -1545,7 +1545,7 @@ hr {
    Mobile Overrides for Specific Sections
    (Standard Contract & Species Info)
    ========================================= */
-@media (max-width: 600px) {
+@media (max-width: 768px) {
 
     /* Target only the specific sections by ID */
     #section-standard-contract,
@@ -1641,16 +1641,22 @@ hr {
 
     /* =========================================
        Fix for Standard Contract Section Layout
-       (Force 1 column on mobile)
+       (Force 1 column on mobile/tablet)
        ========================================= */
     #section-standard-contract>div.grid {
-        grid-template-columns: 1fr !important;
+        display: flex !important;
+        flex-direction: column !important;
         gap: 1rem !important;
+    }
+
+    #section-standard-contract>div.grid>div {
+        width: 100% !important;
     }
 
     /* Ensure the inner date grids (Start/End date) are also full width or properly sized */
     #section-standard-contract .grid-cols-2 {
         /* Keep 2 columns for dates but ensure they fit */
+        display: grid !important;
         grid-template-columns: repeat(2, 1fr) !important;
         gap: 0.5rem !important;
     }
