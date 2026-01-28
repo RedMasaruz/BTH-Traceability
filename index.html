@@ -2621,8 +2621,8 @@
 
                     if (result && result.success) {
                         showMessageBox("✅ บันทึกสำเร็จ!",
-                            `บันทึกข้อมูลการรับแร่และนาโนของ **${formData['a-fullname']}** รหัส **${formData['a-id']}** เข้าระบบเรียบร้อยแล้ว 
-                            <br><br>แถวที่บันทึก: **${result.data?.row || 'N/A'}**
+                            `บันทึกข้อมูลการรับแร่และนาโนของ **${formData['a-fullname']}** 
+                            รหัส **${formData['a-id']}** เข้าระบบเรียบร้อยแล้ว 
                             <br>เวลา: ${new Date().toLocaleTimeString('th-TH')}`
                         );
 
@@ -4729,7 +4729,7 @@
                         agent_name: form.elements['agent_name']?.value || '',
                         farmer_firstname: firstname,
                         farmer_lastname: lastname,
-                        farmer_name_main: form.elements['farmer_name_main']?.value || '',
+                        farmer_name_main: fullName,
                         coord_x: form.elements['coord_x']?.value || '',
                         coord_y: form.elements['coord_y']?.value || '',
                         subdistrict: form.elements['subdistrict']?.value || '',
