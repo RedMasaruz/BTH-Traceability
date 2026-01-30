@@ -1,6 +1,6 @@
 {
-  "name": "Traceability - BTH",
-  "short_name": "BTH Farmer",
+  "name": "BTH Traceability",
+  "short_name": "BTH Traceability",
   "description": "Traceability - บริษัท บ้านไทยเฮิร์บเซ็นเตอร์ จำกัด",
   "start_url": "./",
   "display": "standalone",
@@ -106,7 +106,10 @@
       "purpose": "maskable"
     }
   ],
-  "categories": ["productivity", "business"],
+  "categories": [
+    "productivity",
+    "business"
+  ],
   "lang": "th",
   "dir": "ltr"
 }

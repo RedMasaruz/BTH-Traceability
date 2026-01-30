@@ -1833,20 +1833,20 @@
                 </h2>
             </div>
 
-            <div class="space-y-4 pt-4 border rounded-lg p-4 bg-stone-50">
-                <div class="flex items-center justify-between gap-4">
+            <div class="space-y-4 pt-4 border rounded-lg p-3 md:p-4 bg-stone-50">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                     <div>
                         <p class="text-sm text-stone-600">เข้าสู่ระบบ: <span id="admin-current-user"
                                 class="font-semibold"></span></p>
                     </div>
-                    <div class="flex gap-2">
+                    <div class="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
                         <button id="admin-refresh-btn"
-                            class="bg-gradient-to-r from-green-600 via-green-500 to-green-400 text-white px-4 py-2 rounded-lg shadow-lg hover:shadow-2xl hover:from-green-700 hover:to-green-500 transition-all duration-300"
+                            class="bg-gradient-to-r from-green-600 via-green-500 to-green-400 text-white px-3 py-2 text-sm md:text-base md:px-4 rounded-lg shadow-lg hover:shadow-2xl hover:from-green-700 hover:to-green-500 transition-all duration-300 whitespace-nowrap"
                             onclick="adminCheckAuthAndInit()">
                             โหลดสถานะ / รีเฟรช
                         </button>
                         <button id="admin-logout-btn"
-                            class="bg-gradient-to-r from-red-600 via-red-500 to-red-400 text-white px-4 py-2 rounded-lg shadow-lg hover:shadow-2xl hover:from-red-700 hover:to-red-500 transition-all duration-300"
+                            class="bg-gradient-to-r from-red-600 via-red-500 to-red-400 text-white px-3 py-2 text-sm md:text-base md:px-4 rounded-lg shadow-lg hover:shadow-2xl hover:from-red-700 hover:to-red-500 transition-all duration-300 whitespace-nowrap"
                             onclick="adminForceLogout()">
                             ออกระบบ
                         </button>
@@ -1857,16 +1857,13 @@
                 </div>
             </div>
 
-            <nav class="nav-tabs">
-
-                <button class="nav-tab active" data-target="admin-kratom" data-section-color="orange"
+            <nav class="nav-tabs overflow-x-auto scrollbar-hide pb-2" style="-webkit-overflow-scrolling: touch;">
+                <button class="nav-tab active flex-shrink-0" data-target="admin-kratom" data-section-color="orange"
                     onclick="showSection('admin-kratom', this)">ดูข้อมูลทั้งหมด</button>
-
-                <button class="nav-tab" data-target="admin-production" data-section-color="green"
-                    onclick="showSection('admin-production', this)">Production Dashboard</button>
-
-                <button class="nav-tab" data-target="admin-lounge" data-section-color="blue"
-                    onclick="showSection('admin-lounge', this)">Thailand Kratom GACP</button>
+                <button class="nav-tab flex-shrink-0" data-target="admin-production" data-section-color="green"
+                    onclick="showSection('admin-production', this)">Production</button>
+                <button class="nav-tab flex-shrink-0" data-target="admin-lounge" data-section-color="blue"
+                    onclick="showSection('admin-lounge', this)">GACP</button>
             </nav>
 
             <!-- Production Dashboard Section -->
@@ -1970,9 +1967,7 @@
                         <button id="btn-fetch-usage" class="search-button py-3" onclick="adminFetchAllUsage()">
                             ดึงข้อมูลการใช้ (Sheet B)
                         </button>
-                        <button id="btn-fetch-merged" class="blue-button py-3" onclick="adminFetchMerged()">
-                            ดึงข้อมูลรวม (Merge)
-                        </button>
+
                     </div>
 
                     <div class="flex gap-3">
@@ -6530,63 +6525,6 @@
                 }
             };
 
-            window.adminFetchMerged = function () {
-                if (!isAdminSession()) {
-                    if (typeof showMessageBox === 'function') showMessageBox('❌ สิทธิ์ไม่เพียงพอ', 'คุณไม่มีสิทธิ์เข้าถึงข้อมูลนี้');
-                    return;
-                }
-
-                if (isFetching) return;
-                setFetching(true);
-                const token = sessionStorage.getItem('sessionToken') || '';
-
-                try {
-                    if (typeof isAppsScriptReady === 'function' && !isAppsScriptReady('Admin Fetch')) {
-                        setFetching(false);
-                        return;
-                    }
-
-                    if (typeof google === 'undefined' || !google.script || !google.script.run) {
-                        setFetching(false);
-                        if (typeof showMessageBox === 'function') showMessageBox('❌ ไม่สามารถเชื่อมต่อ', 'google.script.run ไม่พร้อมใช้งาน');
-                        return;
-                    }
-
-                    google.script.run
-                        .withSuccessHandler(result => {
-                            setFetching(false);
-                            console.log('getAllMerged result:', result);
-
-                            if (result === null || typeof result === 'undefined') {
-                                fetchAndShowAdminDebug(token, 'getAllMerged returned null/undefined');
-                                return;
-                            }
-
-                            try {
-                                const data = (typeof result === 'string') ? JSON.parse(result) : result;
-                                if (!data) { if (typeof showMessageBox === 'function') showMessageBox('❌ ไม่มีผลลัพธ์', 'getAllMerged คืนค่าเป็น null/undefined'); return; }
-                                if (data.success === false) { if (typeof showMessageBox === 'function') showMessageBox('❌ ดึงข้อมูลล้มเหลว (server)', escapeHtml(data.message || JSON.stringify(data))); return; }
-                                if (data.success && Array.isArray(data.data)) { displayTable(data.data); return; }
-                                if (Array.isArray(data)) { displayTable(data); return; }
-                                if (typeof showMessageBox === 'function') showMessageBox('❌ ไม่ตรงรูปแบบที่คาด', `<pre style="white-space:pre-wrap;">${escapeHtml(JSON.stringify(data, null, 2))}</pre>`);
-                            } catch (e) {
-                                console.error('adminFetchMerged parse error', e);
-                                if (typeof showMessageBox === 'function') showMessageBox('❌ ข้อผิดพลาด', 'เกิดข้อผิดพลาดในการประมวลผลผลลัพธ์: ' + escapeHtml(e && e.message));
-                            }
-                        })
-                        .withFailureHandler(err => {
-                            setFetching(false);
-                            console.error('adminFetchMerged failed', err);
-                            fetchAndShowAdminDebug(token, 'getAllMerged failed (failureHandler)');
-                            if (typeof showMessageBox === 'function') showMessageBox('❌ ดึงข้อมูลล้มเหลว', escapeHtml((err && err.message) || 'ไม่สามารถดึงข้อมูลจาก Backend ได้'));
-                        })
-                        .getAllMerged(token);
-
-                } catch (e) {
-                    setFetching(false);
-                    if (typeof showMessageBox === 'function') showMessageBox('❌ ไม่รองรับ', 'ไม่พบ google.script.run ในสภาพแวดล้อมนี้');
-                }
-            };
 
 
             // Expose minimal debug helpers only in development mode

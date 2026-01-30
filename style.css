@@ -1709,3 +1709,50 @@ hr {
         padding: 6px 10px !important;
     }
 }
+
+/* Scrollbar hide utility */
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
+/* Admin view mobile improvements */
+@media (max-width: 768px) {
+    #admin-view .nav-tabs {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 8px;
+        padding: 8px 0;
+        margin: 0 -8px;
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+
+    #admin-view .nav-tab {
+        padding: 8px 16px;
+        font-size: 0.85rem;
+        min-width: max-content;
+    }
+
+    #admin-view h2.text-2xl {
+        font-size: 1.25rem;
+    }
+
+    #admin-controls .grid {
+        grid-template-columns: 1fr !important;
+        gap: 0.75rem;
+    }
+
+    #admin-controls .flex.gap-3 {
+        flex-direction: column;
+    }
+
+    #admin-controls .flex.gap-3 > input,
+    #admin-controls .flex.gap-3 > button {
+        width: 100%;
+    }
+}
