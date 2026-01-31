@@ -8544,28 +8544,44 @@
                         <h4 class="font-bold text-gray-800 text-sm">บันทึกการบดผง (Grinding)</h4>
                     </div>
                     
-                    <div>
+                     <div>
                         <label class="block text-sm font-medium mb-1">ผู้ควบคุม</label>
                         <input type="text" name="grinding_operator" required class="w-full border rounded p-2" placeholder="ระบุชื่อ">
                     </div>
-                    
+
                     <div>
-                        <label class="block text-sm font-medium mb-1">ความละเอียดใบมีด (Mesh Scale)</label>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-2">
+                        <label class="block text-sm font-medium mb-2">ความละเอียด (Mesh Size)</label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <label class="cursor-pointer">
+                                <input type="radio" name="grinding_mesh_size" value="20-40" class="peer sr-only" required>
+                                <div class="p-3 rounded-lg border-2 border-gray-200 peer-checked:border-gray-600 peer-checked:bg-gray-50 hover:bg-white transition-all text-center">
+                                    <div class="font-bold text-gray-800">20-40 Mesh</div>
+                                    <div class="text-xs text-gray-500">บดหยาบ</div>
+                                </div>
+                            </label>
+                            
+                            <label class="cursor-pointer">
+                                <input type="radio" name="grinding_mesh_size" value="100" class="peer sr-only">
+                                <div class="p-3 rounded-lg border-2 border-gray-200 peer-checked:border-gray-600 peer-checked:bg-gray-50 hover:bg-white transition-all text-center">
+                                    <div class="font-bold text-gray-800">100 Mesh</div>
+                                    <div class="text-xs text-gray-500">บดผงละเอียด</div>
+                                </div>
+                            </label>
+                            
+                            <label class="cursor-pointer">
+                                <input type="radio" name="grinding_mesh_size" value="120-200" class="peer sr-only">
+                                <div class="p-3 rounded-lg border-2 border-gray-200 peer-checked:border-gray-600 peer-checked:bg-gray-50 hover:bg-white transition-all text-center">
+                                    <div class="font-bold text-gray-800">120-200 Mesh</div>
+                                    <div class="text-xs text-gray-500">บดผงละเอียดสูง</div>
+                                </div>
+                            </label>
                              <label class="cursor-pointer">
-                                 <input type="radio" name="grinding_mesh_type" value="20-40" class="peer sr-only" required>
-                                 <div class="p-3 bg-white border rounded-lg text-center hover:bg-gray-50 peer-checked:bg-blue-50 peer-checked:border-blue-500 peer-checked:text-blue-700 transition-all">
-                                     <span class="font-bold block">บดหยาบ</span>
-                                     <span class="text-xs text-gray-500">20–40 mesh</span>
-                                 </div>
-                             </label>
-                             <label class="cursor-pointer">
-                                 <input type="radio" name="grinding_mesh_type" value="100-300" class="peer sr-only" required>
-                                 <div class="p-3 bg-white border rounded-lg text-center hover:bg-gray-50 peer-checked:bg-blue-50 peer-checked:border-blue-500 peer-checked:text-blue-700 transition-all">
-                                     <span class="font-bold block">บดผง</span>
-                                     <span class="text-xs text-gray-500">100 / 120–200 / 300+ mesh</span>
-                                 </div>
-                             </label>
+                                <input type="radio" name="grinding_mesh_size" value="300+" class="peer sr-only">
+                                <div class="p-3 rounded-lg border-2 border-gray-200 peer-checked:border-gray-600 peer-checked:bg-gray-50 hover:bg-white transition-all text-center">
+                                    <div class="font-bold text-gray-800">300 Mesh+</div>
+                                    <div class="text-xs text-gray-500">บดผงละเอียดพิเศษ</div>
+                                </div>
+                            </label>
                         </div>
                     </div>
                     
