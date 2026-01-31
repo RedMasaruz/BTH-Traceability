@@ -35,6 +35,7 @@ const SHEET_GACP_NAME = "GACP";
 
 // New: separate admin users sheet name (in SPREADSHEET_ID_A)
 const USER_ADMIN_SHEET_NAME = "UserAdmin";
+const SHEET_LOTS_NAME = "ProductionLots";
 
 const SHEET_B_NAMES = [
   "ตัวแทนบาสBDS",
@@ -71,12 +72,19 @@ const ALLOWED_FUNCTIONS = [
   'submitForm',
   'getAllFarmers', 
   'getAllUsage', 
-  'getAllMerged',
   'testAdminAccess', 
   'testSheetAccessPublic', 
   'testPing', 
   'getAllFarmersDebug',
-  'saveGACPData'
+  'getAllFarmersDebug',
+  'saveGACPData',
+  'createLot',
+  'updateLotState',
+  'getLotData',
+  'getAdminDashboardData',
+  'getAgentLots',
+  'getFarmersWithSheetBRecords',
+  'updateMultipleLotState'
 ];
 
 // Survey-specific resources (Slides template, destination sheet & folder for PDFs)
@@ -924,7 +932,10 @@ function formatUsageToText(usageArray, type) {
     if (!item || typeof item !== 'object') return;
     const dateStr = formatDateToDDMMYYYY(item.date || '');
     if (type === 'fertilizer') {
-      if (item.date && item.type) texts.push(`(${dateStr || item.date}, ${item.type})`);
+      // รองรับทั้งรูปแบบเก่าและใหม่
+      if (item.date && item.type) {
+        texts.push(`(${dateStr || item.date}, ${item.type})`);
+      }
     } else if (type === 'nano') {
       if (item.date && item.amount) texts.push(`(${dateStr || item.date}, ${item.amount} ลิตร)`);
     } else if (type === 'mineral') {
@@ -1021,13 +1032,39 @@ function getAllFarmersByLong(longName, sessionToken) {
     if (!sheet || sheet.getLastRow() <= 1) return { success: true, message: "ไม่พบข้อมูลเกษตรกร", data: [] };
     const data = sheet.getDataRange().getValues();
     const headers = data[0];
-    const longIndex = headers.indexOf('ตัวแทนที่สังกัด');
-    if (longIndex === -1) return { success: false, message: "ไม่พบคอลัมน์ ตัวแทนที่สังกัด", data: [] };
+    
+    // Log headers for debugging
+    Logger.log('getAllFarmersByLong headers: ' + JSON.stringify(headers));
+    
+    // Flexible header matching - check multiple possible column names
+    let longIndex = headers.indexOf('ตัวแทนที่สังกัด');
+    if (longIndex === -1) longIndex = headers.indexOf('a-long-affiliation');
+    if (longIndex === -1) longIndex = headers.indexOf('ล้งที่สังกัด');
+    if (longIndex === -1) longIndex = headers.indexOf('ตัวแทน');
+    if (longIndex === -1) longIndex = headers.indexOf('ล้ง');
+    if (longIndex === -1) longIndex = headers.indexOf('Long');
+    if (longIndex === -1) longIndex = headers.indexOf('long_name');
+    
+    // Try findHeaderIndexFlexible as last resort
+    if (longIndex === -1) {
+      longIndex = findHeaderIndexFlexible(sheet, ['ตัวแทนที่สังกัด', 'a-long-affiliation', 'ล้งที่สังกัด', 'ตัวแทน', 'ล้ง']);
+    }
+    
+    if (longIndex === -1) {
+      Logger.log('getAllFarmersByLong: Could not find long column. Available headers: ' + JSON.stringify(headers));
+      return { success: false, message: "ไม่พบคอลัมน์ ตัวแทนที่สังกัด (Headers: " + headers.slice(0, 5).join(', ') + "...)", data: [] };
+    }
+    
     const farmers = [];
+    // requestLongNorm already declared above at line 1011
+    
     for (let i = 1; i < data.length; i++) {
       const row = data[i];
       const rowLong = String(row[longIndex] || '').trim();
-      if (rowLong === longName) {
+      const rowLongNorm = normalizeLongName(rowLong);
+      
+      // Match both original and normalized values
+      if (rowLong === longName || rowLongNorm === requestLongNorm) {
         const obj = {};
         headers.forEach((h, idx) => obj[h] = row[idx]);
         farmers.push(obj);
@@ -1678,77 +1715,6 @@ function getAllUsage(token) {
   }
 }
 
-function getAllMerged(token) {
-  try {
-    const session = validateSessionToken(token);
-    if (!session) return { success: false, message: 'Unauthorized' };
-    
-    // Validate token freshness (re-check in case of replay attacks)
-    const tokenAge = Date.now() - (session.timestamp || 0);
-    if (tokenAge > TOKEN_EXPIRY_MS) {
-      return { success: false, message: 'Token expired' };
-    }
-    
-    if (!isAdminUsername(session.username)) return { success: false, message: 'Forbidden: not admin' };
-
-    // Get farmers data (แปลง Date แล้ว)
-    const farmersResult = getAllFarmers(token);
-    if (!farmersResult.success) return farmersResult;
-    const farmers = farmersResult.data || [];
-
-    // Get usage data (แปลง Date แล้ว)  
-    const usageResult = getAllUsage(token);
-    if (!usageResult.success) return usageResult;
-    const usageData = usageResult.data || [];
-
-    // Build usage map
-    const usageMap = {};
-    usageData.forEach(usage => {
-      const long = usage._sheet || '';
-      const farmerId = String(usage['รหัสเกษตรกร'] || '').trim();
-      if (!farmerId) return;
-      
-      const key = `${long}__${farmerId}`;
-      const existing = usageMap[key];
-      
-      // ใช้เวลาปัจจุบันสำหรับการเปรียบเทียบ timestamp
-      let ts = Date.now();
-      const timeValue = usage['เวลา'];
-      if (timeValue) {
-        if (typeof timeValue === 'string') {
-          const parsed = new Date(timeValue);
-          if (!isNaN(parsed.getTime())) ts = parsed.getTime();
-        } else if (Object.prototype.toString.call(timeValue) === '[object Date]') {
-          if (!isNaN(timeValue.getTime())) ts = timeValue.getTime();
-        }
-      }
-      
-      usage._timestamp = ts;
-      
-      if (!existing || (existing._timestamp && usage._timestamp > existing._timestamp)) {
-        usageMap[key] = usage;
-      }
-    });
-
-    // Merge farmers with usage
-    const merged = farmers.map(f => {
-      const long = String(f['ตัวแทนที่สังกัด'] || '').trim();
-      const fid = String(f['รหัสเกษตรกร'] || '').trim();
-      const key = `${long}__${fid}`;
-      const usage = usageMap[key] || null;
-      
-      return {
-        farmer: f,
-        latestUsage: usage
-      };
-    });
-
-    return { success: true, message: `รวมข้อมูล ${merged.length} รายการ`, data: merged };
-  } catch (e) {
-    console.error('getAllMerged error:', e);
-    return { success: false, message: 'เกิดข้อผิดพลาด: ' + e.message };
-  }
-}
 
 function adminDebugSession(token) {
   try {
@@ -2142,3 +2108,448 @@ function calculateGACPStatusServer(checkData) {
     if (p >= 80) return 'Passed (Basic)';
     return 'Needs Improvement';
 }
+/* ========== DELIVERY SYSTEM / LOT MANAGEMENT ========== */
+
+function getLotsSheet() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID_A);
+  let sheet = ss.getSheetByName(SHEET_LOTS_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(SHEET_LOTS_NAME);
+    const headers = [
+      "lot_id", "state", "agent_id", "farmer_id", "created_at", "updated_at",
+      "data_json", "history_json", "risk_score", "risk_flags", "is_active"
+    ];
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers]).setFontWeight('bold').setBackground('#ffe0b2');
+  }
+  return sheet;
+}
+
+function createLot(data, sessionToken) {
+  try {
+    const session = validateSessionToken(sessionToken);
+    if (!session) throw new Error('กรุณาล็อกอินใหม่');
+
+    const sheet = getLotsSheet();
+    const now = new Date();
+    // Generate simple Lot ID: LOT-YYYYMMDD-XXXX
+    const dateStr = Utilities.formatDate(now, "GMT+7", "yyyyMMdd");
+    const uniquePart = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+    const lotId = `LOT-${dateStr}-${uniquePart}`;
+    
+    // Initial State: PENDING (Wait for "Harvest" completion to become HARVESTED? 
+    // Or starts as HARVESTED if they click "Start Harvest"? 
+    // Spec says: "Start Harvest" -> Lot (Pending). "End Harvest" -> State HARVESTED.
+    
+    // Allow custom initial state (e.g. for agents skipping harvest)
+    const initialState = data.initial_state || "PENDING";
+    
+    const initialData = {
+      ...data,
+      created_by: session.username,
+      timeline: [{ state: initialState, timestamp: now.getTime(), user: session.username, action: "create" }]
+    };
+    
+    // Extended fields support (No schema change, just ensuring JSON stringify captures everything)
+    // data should contain: farmer_id, farmer_name, province, district, species, time_slot, container_size, etc.
+    
+    const row = [
+      lotId, 
+      initialState, 
+      data.agent_id || session.username, 
+      data.farmer_id || '', 
+      now, 
+      now, 
+      JSON.stringify(initialData), 
+      JSON.stringify(initialData.timeline), 
+      0, 
+      "[]", 
+      true
+    ];
+    
+    sheet.appendRow(row);
+    
+    return { success: true, lot_id: lotId, state: initialState };
+    
+  } catch(e) {
+    return { success: false, message: e.message };
+  }
+}
+
+function updateLotState(lotId, newState, data, sessionToken) {
+  try {
+    const session = validateSessionToken(sessionToken);
+    if (!session) throw new Error('กรุณาล็อกอินใหม่');
+
+    const sheet = getLotsSheet();
+    const dataRange = sheet.getDataRange();
+    const values = dataRange.getValues();
+    const headers = values[0];
+    
+    // Find Lot
+    const idxId = headers.indexOf('lot_id');
+    const idxState = headers.indexOf('state');
+    const idxData = headers.indexOf('data_json');
+    const idxHistory = headers.indexOf('history_json');
+    const idxUpdated = headers.indexOf('updated_at');
+    const idxRiskScore = headers.indexOf('risk_score');
+    const idxRiskFlags = headers.indexOf('risk_flags');
+    
+    let rowIndex = -1;
+    for(let i=1; i<values.length; i++) {
+      if(String(values[i][idxId]) === String(lotId)) {
+        rowIndex = i + 1;
+        break;
+      }
+    }
+    
+    if(rowIndex === -1) throw new Error('ไม่พบ Lot ID: ' + lotId);
+    
+    // Current Data
+    const currentDataJson = values[rowIndex-1][idxData];
+    let currentData = {};
+    try { currentData = JSON.parse(currentDataJson); } catch(e) {}
+    
+    const currentHistoryJson = values[rowIndex-1][idxHistory];
+    let history = [];
+    try { history = JSON.parse(currentHistoryJson); } catch(e) {}
+    
+    // Validate Transition (Basic check, more strict logic can be here)
+    // For now, trust the client's requested state, but we log everything.
+    
+    const now = new Date();
+    
+    // Merge new data
+    const updatedData = { ...currentData, ...data };
+    
+    // Add to history
+    history.push({
+      state: newState,
+      timestamp: now.getTime(),
+      user: session.username,
+      action: "update_state",
+      details: data
+    });
+    
+    // Calculate Risk (Simple Placeholder Logic)
+    let riskScore = 0;
+    let riskFlags = [];
+    
+    // Example: If Output > Input (Mass Balance)
+    if (updatedData.qty_harvested && updatedData.qty_sorted_remaining) {
+       if (parseFloat(updatedData.qty_sorted_remaining) > parseFloat(updatedData.qty_harvested)) {
+         riskScore += 50;
+         riskFlags.push("Output > Input (Harvest -> Sort)");
+       }
+    }
+    
+    // Update Row
+    sheet.getRange(rowIndex, idxState + 1).setValue(newState);
+    sheet.getRange(rowIndex, idxData + 1).setValue(JSON.stringify(updatedData));
+    
+    sheet.getRange(rowIndex, idxUpdated + 1).setValue(now);
+    sheet.getRange(rowIndex, idxRiskScore + 1).setValue(riskScore);
+    sheet.getRange(rowIndex, idxRiskFlags + 1).setValue(JSON.stringify(riskFlags));
+    
+    return { success: true, state: newState, lot_id: lotId };
+    
+  } catch (e) {
+    return { success: false, message: e.message };
+  }
+}
+
+/**
+ * Merge multiple SORTED lots into one COMBINED lot for cleaning
+ * @param {Object} data - Contains lot_ids array and cleaning data
+ * @param {string} sessionToken - The session token
+ */
+function updateMultipleLotState(data, sessionToken) {
+  try {
+    const session = validateSessionToken(sessionToken);
+    if (!session) throw new Error('กรุณาล็อกอินใหม่');
+    
+    const lotIds = data.lot_ids;
+    if (!lotIds || !Array.isArray(lotIds) || lotIds.length === 0) {
+      throw new Error('ไม่พบรายการ Lot ที่ต้องการรวม');
+    }
+    
+    const sheet = getLotsSheet();
+    const dataRange = sheet.getDataRange();
+    const values = dataRange.getValues();
+    const headers = values[0];
+    
+    const idxId = headers.indexOf('lot_id');
+    const idxState = headers.indexOf('state');
+    const idxAgentId = headers.indexOf('agent_id');
+    const idxFarmerId = headers.indexOf('farmer_id');
+    const idxData = headers.indexOf('data_json');
+    const idxHistory = headers.indexOf('history_json');
+    const idxUpdated = headers.indexOf('updated_at');
+    
+    const now = new Date();
+    
+    // Generate new combined lot ID
+    const dateStr = Utilities.formatDate(now, "GMT+7", "yyyyMMdd");
+    const uniquePart = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+    const combinedLotId = `LOT-${dateStr}-CMB-${uniquePart}`;
+    
+    // Collect data from all source lots
+    let sourceLots = [];
+    let totalQty = 0;
+    let farmerNames = [];
+    let farmerIds = [];
+    let agentId = '';
+    
+    for (let i = 1; i < values.length; i++) {
+      const lotId = String(values[i][idxId]);
+      
+      if (lotIds.includes(lotId)) {
+        const rowIndex = i + 1;
+        
+        let currentData = {};
+        try { currentData = JSON.parse(values[i][idxData] || '{}'); } catch(e) {}
+        
+        let history = [];
+        try { history = JSON.parse(values[i][idxHistory] || '[]'); } catch(e) {}
+        
+        sourceLots.push({ lotId, rowIndex, data: currentData, history });
+        
+        if (currentData.qty_sorted_remaining) {
+          totalQty += parseFloat(currentData.qty_sorted_remaining) || 0;
+        } else if (currentData.qty_harvested) {
+          totalQty += parseFloat(currentData.qty_harvested) || 0;
+        }
+        
+        if (currentData.farmer_name) farmerNames.push(currentData.farmer_name);
+        if (values[i][idxFarmerId]) farmerIds.push(values[i][idxFarmerId]);
+        if (!agentId && values[i][idxAgentId]) agentId = values[i][idxAgentId];
+        
+        history.push({
+          state: 'MERGED',
+          timestamp: now.getTime(),
+          user: session.username,
+          action: 'merged_to_combined',
+          combined_lot_id: combinedLotId
+        });
+        
+        sheet.getRange(rowIndex, idxState + 1).setValue('MERGED');
+        sheet.getRange(rowIndex, idxHistory + 1).setValue(JSON.stringify(history));
+        sheet.getRange(rowIndex, idxUpdated + 1).setValue(now);
+      }
+    }
+    
+    if (sourceLots.length === 0) {
+      throw new Error('ไม่พบ Lot ที่ตรงกับรายการที่ระบุ');
+    }
+    
+    const combinedData = {
+      source_lots: lotIds,
+      source_farmers: [...new Set(farmerNames)].join(', '),
+      farmer_name: [...new Set(farmerNames)].join(', '),
+      combined_qty_from_sources: totalQty,
+      created_by: session.username,
+      cleaning_operator: data.cleaning_operator,
+      cleaning_method: data.cleaning_method,
+      cleaning_qty_per_round: data.cleaning_qty_per_round,
+      cleaning_time_per_round: data.cleaning_time_per_round,
+      cleaning_round_count: data.cleaning_round_count,
+      cleaning_end_time: data.cleaning_end_time,
+      is_combined_lot: true,
+      timeline: [{ state: 'CLEANED', timestamp: now.getTime(), user: session.username, action: 'combined_cleaning', source_lots: lotIds }]
+    };
+    
+    const newRow = [
+      combinedLotId, 'CLEANED', agentId || session.username, farmerIds.join(','),
+      now, now, JSON.stringify(combinedData), JSON.stringify(combinedData.timeline), 0, "[]", true
+    ];
+    
+    sheet.appendRow(newRow);
+    
+    return { 
+      success: true, 
+      message: `รวม ${sourceLots.length} Lot เป็น "${combinedLotId}" สำเร็จ`,
+      combined_lot_id: combinedLotId,
+      merged_count: sourceLots.length
+    };
+    
+  } catch (e) {
+    return { success: false, message: e.message };
+  }
+}
+
+function getLotData(lotId, sessionToken) {
+  try {
+    const session = validateSessionToken(sessionToken);
+    if (!session) throw new Error('กรุณาล็อกอินใหม่');
+    
+    const sheet = getLotsSheet();
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0];
+    const idxId = headers.indexOf('lot_id');
+    const idxData = headers.indexOf('data_json');
+    const idxState = headers.indexOf('state');
+    
+    for(let i=1; i<data.length; i++) {
+      if(String(data[i][idxId]) === String(lotId)) {
+        return { 
+          success: true, 
+          lot_id: lotId,
+          state: data[i][idxState],
+          data: JSON.parse(data[i][idxData] || '{}') 
+        };
+      }
+    }
+    return { success: false, message: 'Not found' };
+  } catch (e) {
+     return { success: false, message: e.message };
+  }
+}
+
+function getAdminDashboardData(sessionToken) {
+   try {
+    const session = validateSessionToken(sessionToken);
+    if (!session) throw new Error('กรุณาล็อกอินใหม่');
+    
+    // Check Admin
+    if (!isAdminUsername(session.username)) {
+      throw new Error('Access Denied: Admin only');
+    }
+    
+    const sheet = getLotsSheet();
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0];
+    
+    // Map headers to keys
+    const lots = [];
+    for(let i=1; i<data.length; i++) {
+      const row = data[i];
+      let lot = {};
+      headers.forEach((h, idx) => {
+        lot[h] = row[idx];
+      });
+      // Parse JSON fields
+      try { lot.data = JSON.parse(lot.data_json); } catch(e) {}
+      try { lot.history = JSON.parse(lot.history_json); } catch(e) {}
+      try { lot.risk_flags = JSON.parse(lot.risk_flags); } catch(e) {}
+      
+      delete lot.data_json;
+      delete lot.history_json;
+      
+      lots.push(lot);
+    }
+    
+    return { success: true, lots: lots };
+    
+   } catch (e) {
+     return { success: false, message: e.message };
+   }
+}
+
+function getAgentLots(sessionToken) {
+  try {
+    const session = validateSessionToken(sessionToken);
+    if (!session) throw new Error('กรุณาล็อกอินใหม่');
+    
+    const sheet = getLotsSheet();
+    const dataRange = sheet.getDataRange();
+    const values = dataRange.getValues();
+    const headers = values[0];
+    
+    const idxId = headers.indexOf('lot_id');
+    const idxState = headers.indexOf('state');
+    const idxAgent = headers.indexOf('agent_id');
+    const idxUpdated = headers.indexOf('updated_at');
+    const idxData = headers.indexOf('data_json');
+    const idxRiskScore = headers.indexOf('risk_score');
+    
+    const lots = [];
+    
+    // Start from row 1
+    for (let i = 1; i < values.length; i++) {
+      const agentId = String(values[i][idxAgent]);
+      
+      // Strict match on username
+      if (agentId === session.username) { 
+         const row = values[i];
+         let dataObj = {};
+         try { dataObj = JSON.parse(row[idxData]); } catch(e) {}
+         
+         lots.push({
+           lot_id: row[idxId],
+           state: row[idxState],
+           updated_at: row[idxUpdated],
+           agent_id: row[idxAgent],
+           farmer_id: dataObj.farmer_id || '',
+           farmer_name: dataObj.farmer_name || '',
+           qty_harvested: dataObj.qty_harvested || 0,
+           risk_score: row[idxRiskScore] || 0
+         });
+      }
+    }
+    
+    // Sort by updated_at desc
+    lots.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+    
+    return { success: true, lots: lots };
+    
+  } catch (e) {
+    return { success: false, message: e.message };
+  }
+}
+
+/**
+ * Get unique farmers who have records in Sheet B (Mineral/Nano usage) for a given agent.
+ * This is used to populate the farmer dropdown in the Delivery System.
+ * Only farmers with existing Sheet B records can be selected.
+ */
+function getFarmersWithSheetBRecords(longName, sessionToken) {
+  try {
+    const session = validateSessionToken(sessionToken);
+    if (!session) throw new Error('กรุณาล็อกอินใหม่');
+    
+    if (!longName || !SHEET_B_NAMES.includes(longName)) {
+      return { success: false, message: 'ไม่พบชีตตัวแทน: ' + longName };
+    }
+    
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID_B);
+    const sheet = ss.getSheetByName(longName);
+    
+    if (!sheet || sheet.getLastRow() < 2) {
+      return { success: true, data: [], message: 'ไม่พบข้อมูลเกษตรกรในระบบ' };
+    }
+    
+    const values = sheet.getDataRange().getValues();
+    const headers = values[0].map(h => String(h || '').toLowerCase().trim());
+    
+    // Find relevant columns (b-farmer-id is stored as 'รหัสเกษตรกร' or similar)
+    const idxFarmerId = headers.findIndex(h => h.includes('รหัสเกษตรกร') || h.includes('farmer') || h.includes('id'));
+    const idxFarmerName = headers.findIndex(h => h.includes('ชื่อ') || h.includes('name'));
+    
+    if (idxFarmerId === -1) {
+      Logger.log('getFarmersWithSheetBRecords: Could not find farmer ID column in headers: ' + JSON.stringify(headers));
+      return { success: false, message: 'ไม่พบคอลัมน์รหัสเกษตรกร' };
+    }
+    
+    // Extract unique farmers
+    const farmerMap = new Map();
+    for (let i = 1; i < values.length; i++) {
+      const farmerId = String(values[i][idxFarmerId] || '').trim();
+      const farmerName = idxFarmerName >= 0 ? String(values[i][idxFarmerName] || '').trim() : '';
+      
+      if (farmerId && !farmerMap.has(farmerId)) {
+        farmerMap.set(farmerId, {
+          farmer_id: farmerId,
+          farmer_name_main: farmerName
+        });
+      }
+    }
+    
+    const farmers = Array.from(farmerMap.values());
+    
+    return { success: true, data: farmers };
+    
+  } catch (e) {
+    Logger.log('getFarmersWithSheetBRecords error: ' + e.message);
+    return { success: false, message: e.message };
+  }
+}
+

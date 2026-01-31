@@ -1180,11 +1180,6 @@
                         </button>
                     </div>
                 </nav>
-
-                <!-- ข้อความแนะนำ -->
-                <div class="mt-6 pt-4 border-t border-gray-200 text-center">
-                    <p class="text-xs text-stone-500">💡 เลือกเมนูที่ต้องการเพื่อดำเนินการต่อ</p>
-                </div>
             </div>
         </div>
 
@@ -1507,39 +1502,141 @@
                                     <input type="date" class="fertilizer-date w-full">
                                 </div>
 
-                                <div class="md:col-span-2">
-                                    <label class="block text-sm font-medium mb-1">บำรุงดินด้วย<span
-                                            class="text-xs text-green-600">(เลือกได้มากกว่าหนึ่ง)</span></label>
-                                    <div class="radio-group flex flex-wrap gap-2">
-                                        <input type="checkbox" id="b-fert-organic" name="fertilizer-type"
-                                            value="ปุ๋ยอินทรีย์" class="hidden">
-                                        <label for="b-fert-organic"
-                                            class="px-3 py-2 rounded-lg cursor-pointer border border-green-300 bg-white hover:bg-green-50">ปุ๋ยอินทรีย์</label>
+                                <div class="md:col-span-2 space-y-4">
+                                    <!-- ส่วนที่ 1: ปุ๋ย -->
+                                    <div class="p-4 bg-green-50 rounded-lg border border-green-200">
+                                        <label class="block text-sm font-bold mb-2 text-green-800">🌱 ปุ๋ย</label>
+                                        <div class="flex flex-wrap gap-2 mb-3">
+                                            <input type="checkbox" id="b-fert-manure" name="fertilizer-type"
+                                                value="ปุ๋ยคอก" class="hidden" onchange="toggleManureDetails(this)">
+                                            <label for="b-fert-manure"
+                                                class="px-3 py-2 rounded-lg cursor-pointer border border-green-300 bg-white hover:bg-green-100 text-sm">ปุ๋ยคอก</label>
 
-                                        <input type="checkbox" id="b-fert-chemical" name="fertilizer-type"
-                                            value="ปุ๋ยเคมี" class="hidden">
-                                        <label for="b-fert-chemical"
-                                            class="px-3 py-2 rounded-lg cursor-pointer border border-green-300 bg-white hover:bg-green-50">ปุ๋ยเคมี</label>
+                                            <input type="checkbox" id="b-fert-bio" name="fertilizer-type"
+                                                value="ปุ๋ยชีวภาพ" class="hidden">
+                                            <label for="b-fert-bio"
+                                                class="px-3 py-2 rounded-lg cursor-pointer border border-green-300 bg-white hover:bg-green-100 text-sm">ปุ๋ยชีวภาพ</label>
 
-                                        <input type="checkbox" id="b-fert-manure" name="fertilizer-type" value="ปุ๋ยคอก"
-                                            class="hidden">
-                                        <label for="b-fert-manure"
-                                            class="px-3 py-2 rounded-lg cursor-pointer border border-green-300 bg-white hover:bg-green-50">ปุ๋ยคอก</label>
+                                            <input type="checkbox" id="b-fert-other" name="fertilizer-type"
+                                                value="อื่นๆ" class="hidden"
+                                                onchange="toggleOtherFertilizerInputUse(this)">
+                                            <label for="b-fert-other"
+                                                class="px-3 py-2 rounded-lg cursor-pointer border border-green-300 bg-white hover:bg-green-100 text-sm">อื่นๆ
+                                                (ระบุ)</label>
+                                        </div>
 
-                                        <input type="checkbox" id="b-fert-volcanic" name="fertilizer-type"
-                                            value="แร่ภูเขาไฟ" class="hidden">
-                                        <label for="b-fert-volcanic"
-                                            class="px-3 py-2 rounded-lg cursor-pointer border border-green-300 bg-white hover:bg-green-50">แร่ภูเขาไฟ</label>
+                                        <!-- ปุ๋ยคอก sub-options -->
+                                        <div id="manure-details"
+                                            class="hidden mb-3 ml-2 p-3 bg-white rounded-lg border border-green-200">
+                                            <label
+                                                class="block text-xs font-medium mb-2 text-green-700">ระบุประเภทปุ๋ยคอก</label>
+                                            <div class="flex flex-wrap gap-2">
+                                                <input type="checkbox" id="b-manure-cow" name="manure-type"
+                                                    value="ขี้วัว" class="hidden">
+                                                <label for="b-manure-cow"
+                                                    class="px-2 py-1 text-xs rounded-lg cursor-pointer border border-green-300 bg-green-50 hover:bg-green-100">ขี้วัว</label>
 
-                                        <input type="checkbox" id="b-fert-other" name="fertilizer-type" value="อื่นๆ"
-                                            class="hidden" onchange="toggleOtherFertilizerInputUse(this)">
-                                        <label for="b-fert-other"
-                                            class="px-3 py-2 rounded-lg cursor-pointer border border-green-300 bg-white hover:bg-green-50">อื่นๆ
-                                            (ระบุ)</label>
+                                                <input type="checkbox" id="b-manure-buffalo" name="manure-type"
+                                                    value="ขี้ควาย" class="hidden">
+                                                <label for="b-manure-buffalo"
+                                                    class="px-2 py-1 text-xs rounded-lg cursor-pointer border border-green-300 bg-green-50 hover:bg-green-100">ขี้ควาย</label>
+
+                                                <input type="checkbox" id="b-manure-pig" name="manure-type"
+                                                    value="ขี้หมู" class="hidden">
+                                                <label for="b-manure-pig"
+                                                    class="px-2 py-1 text-xs rounded-lg cursor-pointer border border-green-300 bg-green-50 hover:bg-green-100">ขี้หมู</label>
+
+                                                <input type="checkbox" id="b-manure-chicken" name="manure-type"
+                                                    value="ขี้ไก่" class="hidden">
+                                                <label for="b-manure-chicken"
+                                                    class="px-2 py-1 text-xs rounded-lg cursor-pointer border border-green-300 bg-green-50 hover:bg-green-100">ขี้ไก่</label>
+
+                                                <input type="checkbox" id="b-manure-bat" name="manure-type"
+                                                    value="ขี้ค้างคาว" class="hidden">
+                                                <label for="b-manure-bat"
+                                                    class="px-2 py-1 text-xs rounded-lg cursor-pointer border border-green-300 bg-green-50 hover:bg-green-100">ขี้ค้างคาว</label>
+                                            </div>
+                                        </div>
+
+                                        <input type="text" id="b-fertilizer-other-text-use"
+                                            placeholder="โปรดระบุชนิดปุ๋ยอื่นๆ"
+                                            class="hidden mb-3 w-full px-3 py-2 border border-green-300 rounded-lg text-sm fertilizer-other-text">
+
+                                        <!-- จำนวนปุ๋ยที่ใช้ -->
+                                        <div class="pt-3 border-t border-green-200">
+                                            <label
+                                                class="block text-xs font-medium mb-2 text-green-700">จำนวนปุ๋ยที่ใช้</label>
+                                            <div class="flex flex-wrap gap-2 items-center">
+                                                <input type="number" id="b-fertilizer-amount"
+                                                    class="w-20 px-2 py-1 border border-green-300 rounded-lg text-sm"
+                                                    placeholder="จำนวน" min="0" step="0.01">
+                                                <select id="b-fertilizer-unit"
+                                                    class="px-2 py-1 border border-green-300 rounded-lg text-sm bg-white">
+                                                    <option value="กิโลกรัม">กิโลกรัม</option>
+                                                    <option value="กรัม">กรัม</option>
+                                                </select>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <input type="text" id="b-fertilizer-other-text-use"
-                                        placeholder="โปรดระบุชนิดปุ๋ยอื่นๆ ที่ใช้"
-                                        class="hidden mt-2 w-full fertilizer-other-text">
+
+                                    <!-- ส่วนที่ 2: น้ำหมัก -->
+                                    <div class="p-4 bg-amber-50 rounded-lg border border-amber-200">
+                                        <label class="block text-sm font-bold mb-2 text-amber-800">🍶 น้ำหมัก</label>
+                                        <div class="flex flex-wrap gap-2 mb-3">
+                                            <input type="checkbox" id="b-fermented-microbe" name="fermented-type"
+                                                value="น้ำหมักจุลินทรีย์" class="hidden">
+                                            <label for="b-fermented-microbe"
+                                                class="px-3 py-2 rounded-lg cursor-pointer border border-amber-300 bg-white hover:bg-amber-100 text-sm">น้ำหมักจุลินทรีย์</label>
+
+                                            <input type="checkbox" id="b-fermented-herb" name="fermented-type"
+                                                value="น้ำหมักพืชสมุนไพร" class="hidden">
+                                            <label for="b-fermented-herb"
+                                                class="px-3 py-2 rounded-lg cursor-pointer border border-amber-300 bg-white hover:bg-amber-100 text-sm">น้ำหมักพืชสมุนไพร</label>
+                                        </div>
+
+                                        <!-- จำนวนน้ำหมักที่ใช้ -->
+                                        <div class="pt-3 border-t border-amber-200">
+                                            <label
+                                                class="block text-xs font-medium mb-2 text-amber-700">จำนวนน้ำหมักที่ใช้</label>
+                                            <div class="flex flex-wrap gap-2 items-center">
+                                                <input type="number" id="b-fermented-amount"
+                                                    class="w-20 px-2 py-1 border border-amber-300 rounded-lg text-sm"
+                                                    placeholder="จำนวน" min="0" step="0.01">
+                                                <select id="b-fermented-unit"
+                                                    class="px-2 py-1 border border-amber-300 rounded-lg text-sm bg-white">
+                                                    <option value="ลิตร">ลิตร</option>
+                                                    <option value="มิลลิลิตร">มิลลิลิตร</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- ส่วนที่ 3: แร่ภูเขาไฟ -->
+                                    <div class="p-4 bg-stone-100 rounded-lg border border-stone-300">
+                                        <label class="block text-sm font-bold mb-2 text-stone-800">🌋 แร่ภูเขาไฟ</label>
+                                        <div class="flex flex-wrap gap-2 mb-3">
+                                            <input type="checkbox" id="b-fert-volcanic" name="volcanic-type"
+                                                value="แร่ภูเขาไฟ" class="hidden">
+                                            <label for="b-fert-volcanic"
+                                                class="px-3 py-2 rounded-lg cursor-pointer border border-stone-400 bg-white hover:bg-stone-200 text-sm">ใช้แร่ภูเขาไฟ</label>
+                                        </div>
+
+                                        <!-- จำนวนแร่ภูเขาไฟที่ใช้ -->
+                                        <div class="pt-3 border-t border-stone-300">
+                                            <label
+                                                class="block text-xs font-medium mb-2 text-stone-700">จำนวนแร่ภูเขาไฟที่ใช้</label>
+                                            <div class="flex flex-wrap gap-2 items-center">
+                                                <input type="number" id="b-volcanic-amount"
+                                                    class="w-20 px-2 py-1 border border-stone-400 rounded-lg text-sm"
+                                                    placeholder="จำนวน" min="0" step="0.01">
+                                                <select id="b-volcanic-unit"
+                                                    class="px-2 py-1 border border-stone-400 rounded-lg text-sm bg-white">
+                                                    <option value="กิโลกรัม">กิโลกรัม</option>
+                                                    <option value="กรัม">กรัม</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div class="flex items-end col-span-full">
@@ -2555,6 +2652,36 @@
             toggleOtherFertilizerInputUse(event.target);
         }
 
+        function toggleManureDetails(checkbox) {
+            const manureDetails = document.getElementById('manure-details');
+            if (!manureDetails) return;
+
+            if (checkbox.checked) {
+                manureDetails.classList.remove('hidden');
+            } else {
+                manureDetails.classList.add('hidden');
+                // Reset all manure type checkboxes
+                manureDetails.querySelectorAll('input[name="manure-type"]').forEach(cb => {
+                    cb.checked = false;
+                });
+            }
+        }
+
+        function toggleFermentedDetails(checkbox) {
+            const fermentedDetails = document.getElementById('fermented-details');
+            if (!fermentedDetails) return;
+
+            if (checkbox.checked) {
+                fermentedDetails.classList.remove('hidden');
+            } else {
+                fermentedDetails.classList.add('hidden');
+                // Reset all fermented type checkboxes
+                fermentedDetails.querySelectorAll('input[name="fermented-type"]').forEach(cb => {
+                    cb.checked = false;
+                });
+            }
+        }
+
         function toggleAdjustedBRate() {
             const adjustedInput = document.getElementById('b-rate-adjusted');
             const adjustRadio = document.getElementById('b-rate-adjust');
@@ -3292,7 +3419,6 @@
         function createFertilizerUsageHTML() {
             const uniqueId = `fert-${Date.now()}`;
 
-            // NOTE: removed inline onchange attribute; will attach listener in initializeFertilizerCheckboxes()
             return `
                 <div class="fertilizer-usage-item grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
                     <div>
@@ -3300,22 +3426,101 @@
                         <input type="date" class="fertilizer-date w-full">
                     </div>
 
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-medium mb-1">บำรุงดินด้วย <span class="text-xs text-green-600">(เลือกได้มากกว่าหนึ่ง)</span></label>
-                        <div class="radio-group flex flex-wrap gap-2">
-                            <input type="checkbox" id="${uniqueId}-organic" name="fertilizer_type[]" value="ปุ๋ยอินทรีย์" class="">
-                            <label for="${uniqueId}-organic" class="px-3 py-2 rounded-lg cursor-pointer border border-green-300 bg-white hover:bg-green-50">ปุ๋ยอินทรีย์</label>
+                    <div class="md:col-span-2 space-y-4">
+                        <!-- ส่วนที่ 1: ปุ๋ย -->
+                        <div class="p-4 bg-green-50 rounded-lg border border-green-200">
+                            <label class="block text-sm font-bold mb-2 text-green-800">🌱 ปุ๋ย</label>
+                            <div class="flex flex-wrap gap-2 mb-3">
+                                <input type="checkbox" id="${uniqueId}-manure" name="fertilizer-type" value="ปุ๋ยคอก" class="hidden" onchange="toggleManureDetails(this)">
+                                <label for="${uniqueId}-manure" class="px-3 py-2 rounded-lg cursor-pointer border border-green-300 bg-white hover:bg-green-100 text-sm">ปุ๋ยคอก</label>
 
-                            <input type="checkbox" id="${uniqueId}-chemical" name="fertilizer_type[]" value="ปุ๋ยเคมี" class="">
-                            <label for="${uniqueId}-chemical" class="px-3 py-2 rounded-lg cursor-pointer border border-green-300 bg-white hover:bg-green-50">ปุ๋ยเคมี</label>
+                                <input type="checkbox" id="${uniqueId}-bio" name="fertilizer-type" value="ปุ๋ยชีวภาพ" class="hidden">
+                                <label for="${uniqueId}-bio" class="px-3 py-2 rounded-lg cursor-pointer border border-green-300 bg-white hover:bg-green-100 text-sm">ปุ๋ยชีวภาพ</label>
 
-                            <input type="checkbox" id="${uniqueId}-manure" name="fertilizer_type[]" value="ปุ๋ยคอก" class="">
-                            <label for="${uniqueId}-manure" class="px-3 py-2 rounded-lg cursor-pointer border border-green-300 bg-white hover:bg-green-50">ปุ๋ยคอก</label>
+                                <input type="checkbox" id="${uniqueId}-other" name="fertilizer-type" value="อื่นๆ" class="hidden" onchange="toggleOtherFertilizerInputUse(this)">
+                                <label for="${uniqueId}-other" class="px-3 py-2 rounded-lg cursor-pointer border border-green-300 bg-white hover:bg-green-100 text-sm">อื่นๆ (ระบุ)</label>
+                            </div>
+                            
+                            <!-- ปุ๋ยคอก sub-options -->
+                            <div id="manure-details" class="hidden mb-3 ml-2 p-3 bg-white rounded-lg border border-green-200">
+                                <label class="block text-xs font-medium mb-2 text-green-700">ระบุประเภทปุ๋ยคอก</label>
+                                <div class="flex flex-wrap gap-2">
+                                    <input type="checkbox" id="${uniqueId}-cow" name="manure-type" value="ขี้วัว" class="hidden">
+                                    <label for="${uniqueId}-cow" class="px-2 py-1 text-xs rounded-lg cursor-pointer border border-green-300 bg-green-50 hover:bg-green-100">ขี้วัว</label>
+                                    
+                                    <input type="checkbox" id="${uniqueId}-buffalo" name="manure-type" value="ขี้ควาย" class="hidden">
+                                    <label for="${uniqueId}-buffalo" class="px-2 py-1 text-xs rounded-lg cursor-pointer border border-green-300 bg-green-50 hover:bg-green-100">ขี้ควาย</label>
+                                    
+                                    <input type="checkbox" id="${uniqueId}-pig" name="manure-type" value="ขี้หมู" class="hidden">
+                                    <label for="${uniqueId}-pig" class="px-2 py-1 text-xs rounded-lg cursor-pointer border border-green-300 bg-green-50 hover:bg-green-100">ขี้หมู</label>
+                                    
+                                    <input type="checkbox" id="${uniqueId}-chicken" name="manure-type" value="ขี้ไก่" class="hidden">
+                                    <label for="${uniqueId}-chicken" class="px-2 py-1 text-xs rounded-lg cursor-pointer border border-green-300 bg-green-50 hover:bg-green-100">ขี้ไก่</label>
+                                    
+                                    <input type="checkbox" id="${uniqueId}-bat" name="manure-type" value="ขี้ค้างคาว" class="hidden">
+                                    <label for="${uniqueId}-bat" class="px-2 py-1 text-xs rounded-lg cursor-pointer border border-green-300 bg-green-50 hover:bg-green-100">ขี้ค้างคาว</label>
+                                </div>
+                            </div>
 
-                            <input type="checkbox" id="${uniqueId}-other" name="fertilizer_type[]" value="อื่นๆ" class="">
-                            <label for="${uniqueId}-other" class="px-3 py-2 rounded-lg cursor-pointer border border-green-300 bg-white hover:bg-green-50">อื่นๆ (ระบุ)</label>
+                            <input type="text" placeholder="โปรดระบุชนิดปุ๋ยอื่นๆ" class="hidden mb-3 w-full px-3 py-2 border border-green-300 rounded-lg text-sm fertilizer-other-text">
+                            
+                            <!-- จำนวนปุ๋ยที่ใช้ -->
+                            <div class="pt-3 border-t border-green-200">
+                                <label class="block text-xs font-medium mb-2 text-green-700">จำนวนปุ๋ยที่ใช้</label>
+                                <div class="flex flex-wrap gap-2 items-center">
+                                    <input type="number" id="b-fertilizer-amount" class="w-20 px-2 py-1 border border-green-300 rounded-lg text-sm" placeholder="จำนวน" min="0" step="0.01">
+                                    <select id="b-fertilizer-unit" class="px-2 py-1 border border-green-300 rounded-lg text-sm bg-white">
+                                        <option value="กิโลกรัม">กิโลกรัม</option>
+                                        <option value="กรัม">กรัม</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
-                        <input type="text" placeholder="โปรดระบุชนิดปุ๋ยอื่นๆ ที่ใช้" class="hidden mt-2 w-full fertilizer-other-text">
+
+                        <!-- ส่วนที่ 2: น้ำหมัก -->
+                        <div class="p-4 bg-amber-50 rounded-lg border border-amber-200">
+                            <label class="block text-sm font-bold mb-2 text-amber-800">🍶 น้ำหมัก</label>
+                            <div class="flex flex-wrap gap-2 mb-3">
+                                <input type="checkbox" id="${uniqueId}-microbe" name="fermented-type" value="น้ำหมักจุลินทรีย์" class="hidden">
+                                <label for="${uniqueId}-microbe" class="px-3 py-2 rounded-lg cursor-pointer border border-amber-300 bg-white hover:bg-amber-100 text-sm">น้ำหมักจุลินทรีย์</label>
+                                
+                                <input type="checkbox" id="${uniqueId}-herb" name="fermented-type" value="น้ำหมักพืชสมุนไพร" class="hidden">
+                                <label for="${uniqueId}-herb" class="px-3 py-2 rounded-lg cursor-pointer border border-amber-300 bg-white hover:bg-amber-100 text-sm">น้ำหมักพืชสมุนไพร</label>
+                            </div>
+                            
+                            <!-- จำนวนน้ำหมักที่ใช้ -->
+                            <div class="pt-3 border-t border-amber-200">
+                                <label class="block text-xs font-medium mb-2 text-amber-700">จำนวนน้ำหมักที่ใช้</label>
+                                <div class="flex flex-wrap gap-2 items-center">
+                                    <input type="number" id="b-fermented-amount" class="w-20 px-2 py-1 border border-amber-300 rounded-lg text-sm" placeholder="จำนวน" min="0" step="0.01">
+                                    <select id="b-fermented-unit" class="px-2 py-1 border border-amber-300 rounded-lg text-sm bg-white">
+                                        <option value="ลิตร">ลิตร</option>
+                                        <option value="มิลลิลิตร">มิลลิลิตร</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ส่วนที่ 3: แร่ภูเขาไฟ -->
+                        <div class="p-4 bg-stone-100 rounded-lg border border-stone-300">
+                            <label class="block text-sm font-bold mb-2 text-stone-800">🌋 แร่ภูเขาไฟ</label>
+                            <div class="flex flex-wrap gap-2 mb-3">
+                                <input type="checkbox" id="${uniqueId}-volcanic" name="volcanic-type" value="แร่ภูเขาไฟ" class="hidden">
+                                <label for="${uniqueId}-volcanic" class="px-3 py-2 rounded-lg cursor-pointer border border-stone-400 bg-white hover:bg-stone-200 text-sm">ใช้แร่ภูเขาไฟ</label>
+                            </div>
+                            
+                            <!-- จำนวนแร่ภูเขาไฟที่ใช้ -->
+                            <div class="pt-3 border-t border-stone-300">
+                                <label class="block text-xs font-medium mb-2 text-stone-700">จำนวนแร่ภูเขาไฟที่ใช้</label>
+                                <div class="flex flex-wrap gap-2 items-center">
+                                    <input type="number" id="b-volcanic-amount" class="w-20 px-2 py-1 border border-stone-400 rounded-lg text-sm" placeholder="จำนวน" min="0" step="0.01">
+                                    <select id="b-volcanic-unit" class="px-2 py-1 border border-stone-400 rounded-lg text-sm bg-white">
+                                        <option value="กิโลกรัม">กิโลกรัม</option>
+                                        <option value="กรัม">กรัม</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="flex items-end col-span-full"></div> 
@@ -3530,24 +3735,83 @@
 
             document.querySelectorAll('.fertilizer-usage-item').forEach((item, index) => {
                 const date = item.querySelector('.fertilizer-date')?.value;
-                const checkedBoxes = item.querySelectorAll('input[type="checkbox"]:checked');
-                const checkedTypes = Array.from(checkedBoxes).map(cb => {
-                    if (cb.value === 'อื่นๆ') {
+                if (!date) return;
+
+                // ส่วนที่ 1: ปุ๋ย
+                const fertilizerTypes = [];
+                const fertilizerCheckboxes = item.querySelectorAll('input[name="fertilizer-type"]:checked');
+                fertilizerCheckboxes.forEach(cb => {
+                    if (cb.value === 'ปุ๋ยคอก') {
+                        // รวมประเภทปุ๋ยคอกย่อย
+                        const manureTypes = [];
+                        item.querySelectorAll('input[name="manure-type"]:checked').forEach(m => {
+                            manureTypes.push(m.value);
+                        });
+                        if (manureTypes.length > 0) {
+                            fertilizerTypes.push(`ปุ๋ยคอก (${manureTypes.join(', ')})`);
+                        } else {
+                            fertilizerTypes.push('ปุ๋ยคอก');
+                        }
+                    } else if (cb.value === 'อื่นๆ') {
                         const otherTextInput = item.querySelector('.fertilizer-other-text');
                         if (otherTextInput && !otherTextInput.classList.contains('hidden')) {
                             const otherValue = otherTextInput.value.trim();
-                            return otherValue ? `อื่นๆ: ${otherValue}` : 'อื่นๆ';
-
+                            fertilizerTypes.push(otherValue ? `อื่นๆ: ${otherValue}` : 'อื่นๆ');
+                        } else {
+                            fertilizerTypes.push('อื่นๆ');
                         }
-                        return 'อื่นๆ'
+                    } else {
+                        fertilizerTypes.push(cb.value);
                     }
-                    return cb.value;
-                }).filter(val => val); // กรองค่าว่าง
+                });
 
-                if (date && checkedTypes.length > 0) {
+                const fertAmount = item.querySelector('#b-fertilizer-amount')?.value || '';
+                const fertUnit = item.querySelector('#b-fertilizer-unit')?.value || 'กิโลกรัม';
+
+                if (fertilizerTypes.length > 0) {
+                    const fertText = fertAmount ?
+                        `${fertilizerTypes.join(', ')} (${fertAmount} ${fertUnit})` :
+                        fertilizerTypes.join(', ');
                     fertilizerUsage.push({
                         date: date,
-                        type: checkedTypes.join(', ')
+                        type: fertText,
+                        category: 'fertilizer'
+                    });
+                }
+
+                // ส่วนที่ 2: น้ำหมัก
+                const fermentedTypes = [];
+                item.querySelectorAll('input[name="fermented-type"]:checked').forEach(cb => {
+                    fermentedTypes.push(cb.value);
+                });
+
+                const fermentedAmount = item.querySelector('#b-fermented-amount')?.value || '';
+                const fermentedUnit = item.querySelector('#b-fermented-unit')?.value || 'ลิตร';
+
+                if (fermentedTypes.length > 0) {
+                    const fermentedText = fermentedAmount ?
+                        `${fermentedTypes.join(', ')} (${fermentedAmount} ${fermentedUnit})` :
+                        fermentedTypes.join(', ');
+                    fertilizerUsage.push({
+                        date: date,
+                        type: fermentedText,
+                        category: 'fermented'
+                    });
+                }
+
+                // ส่วนที่ 3: แร่ภูเขาไฟ
+                const volcanicCheckbox = item.querySelector('input[name="volcanic-type"]:checked');
+                const volcanicAmount = item.querySelector('#b-volcanic-amount')?.value || '';
+                const volcanicUnit = item.querySelector('#b-volcanic-unit')?.value || 'กิโลกรัม';
+
+                if (volcanicCheckbox) {
+                    const volcanicText = volcanicAmount ?
+                        `แร่ภูเขาไฟ (${volcanicAmount} ${volcanicUnit})` :
+                        'แร่ภูเขาไฟ';
+                    fertilizerUsage.push({
+                        date: date,
+                        type: volcanicText,
+                        category: 'volcanic'
                     });
                 }
             });
@@ -6626,6 +6890,8 @@
         window.getFertilizerUsageData = getFertilizerUsageData;
         window.getUsageData = getUsageData;
         window.toggleOtherFertilizerInputUse = toggleOtherFertilizerInputUse;
+        window.toggleManureDetails = toggleManureDetails;
+        window.toggleFermentedDetails = toggleFermentedDetails;
         window.initializeFertilizerCheckboxes = initializeFertilizerCheckboxes;
         window.resetUsageContainers = resetUsageContainers;
         window.createFertilizerUsageHTML = createFertilizerUsageHTML;
