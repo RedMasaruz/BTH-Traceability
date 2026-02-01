@@ -8104,6 +8104,9 @@
                         <label class="block text-sm font-medium mb-1">ช่วงเวลาเก็บ</label>
                         <div class="flex gap-4">
                             <label class="flex items-center gap-2">
+                                <input type="radio" name="time_slot" value="early_morning"> เช้ามืด (03:00-06:00)
+                            </label>
+                            <label class="flex items-center gap-2">
                                 <input type="radio" name="time_slot" value="morning" checked> เช้า (06:00-11:00)
                             </label>
                             <label class="flex items-center gap-2">
@@ -8431,6 +8434,10 @@
         }
 
         function renderCleaningForm(lotId) {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const currentTime = `${hours}:${minutes}`;
             return `
                 <form class="space-y-4">
                     <input type="hidden" name="lot_id" value="${lotId}">
@@ -8472,7 +8479,7 @@
                     
                      <div>
                         <label class="block text-sm font-medium mb-1">เวลาจบงาน</label>
-                        <input type="time" name="cleaning_end_time" required class="w-full border rounded p-2">
+                        <input type="time" name="cleaning_end_time" value="${currentTime}" readonly class="w-full border rounded p-2 bg-gray-100 text-gray-500 cursor-not-allowed">
                     </div>
                     
                     <div class="p-2 bg-gray-50 text-xs text-gray-500 rounded">
@@ -8927,6 +8934,10 @@
         }
 
         function renderCleaningForm(lotId) {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const currentTime = `${hours}:${minutes}`;
             return `
                 <form class="space-y-4">
                     <input type="hidden" name="lot_id" value="${lotId}">
@@ -8968,7 +8979,7 @@
                     
                      <div>
                         <label class="block text-sm font-medium mb-1">เวลาจบงาน</label>
-                        <input type="time" name="cleaning_end_time" required class="w-full border rounded p-2">
+                        <input type="time" name="cleaning_end_time" value="${currentTime}" readonly class="w-full border rounded p-2 bg-gray-100 text-gray-500 cursor-not-allowed">
                     </div>
                     
                     <div class="p-2 bg-gray-50 text-xs text-gray-500 rounded">
