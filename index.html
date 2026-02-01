@@ -7643,6 +7643,7 @@
         const LOT_STATES = {
             PENDING: "รอเก็บเกี่ยว",
             HARVESTED: "เก็บเกี่ยวแล้ว",
+            RECEIVED: "รับซื้อแล้ว",
             SORTED: "คัดแยกแล้ว",
             CLEANED: "ล้างทำความสะอาดแล้ว",
             DRIED: "อบแห้งแล้ว",
@@ -7653,7 +7654,9 @@
 
         const STATE_FLOW = [
             "PENDING",
+            "PENDING",
             "HARVESTED",
+            "RECEIVED",
             "SORTED",
             "CLEANED",
             "DRIED",
@@ -7732,10 +7735,26 @@
                     year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
                 });
 
+                // Robust Source Determination
+                let lotSource = 'harvest'; // Default
+                if (lot.data && lot.data.lot_source) {
+                    lotSource = lot.data.lot_source;
+                } else {
+                    // Fallback Logic
+                    const isReceivedForm = (lot.data && lot.data.form_mode === 'receive_goods');
+                    const hasReceivedState = lot.state === 'RECEIVED' || (lot.data && lot.data.initial_state === 'RECEIVED');
+                    const hasReceivedHistory = lot.history && Array.isArray(lot.history) && lot.history.some(h => h.state === 'RECEIVED');
+
+                    if (isReceivedForm || hasReceivedState || hasReceivedHistory) {
+                        lotSource = 'receive';
+                    }
+                }
+
                 // Color coding based on state
                 let stateColor = "bg-gray-100 text-gray-800";
                 if (lot.state === 'PENDING') stateColor = "bg-yellow-100 text-yellow-800";
                 else if (lot.state === 'HARVESTED') stateColor = "bg-blue-100 text-blue-800";
+                else if (lot.state === 'RECEIVED') stateColor = "bg-purple-100 text-purple-800";
                 else if (lot.state === 'SORTED') stateColor = "bg-cyan-100 text-cyan-800";
                 else if (lot.state === 'CLEANED') stateColor = "bg-teal-100 text-teal-800";
 
@@ -7764,12 +7783,15 @@
                     <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow ${lot.state === 'SORTED' ? 'border-l-4 border-l-cyan-500' : ''}">
                         <div class="flex items-start">
                             ${checkboxHtml}
-                            <div class="flex-grow cursor-pointer" onclick="openLotAction('${lot.lot_id}', '${lot.state}')">
+                            <div class="flex-grow cursor-pointer" onclick="openLotAction('${lot.lot_id}', '${lot.state}', '${lotSource}')">
                                 <div class="flex justify-between items-start mb-2">
                                     <div>
                                         <div class="font-bold text-lg text-gray-800 flex items-center">
                                             ${lot.lot_id}
                                             ${riskHtml}
+                                            ${lotSource === 'receive'
+                        ? '<span class="ml-2 px-2 py-0.5 rounded text-xs bg-purple-100 text-purple-800 border border-purple-200" title="รับซื้อ">💰 รับซื้อ</span>'
+                        : '<span class="ml-2 px-2 py-0.5 rounded text-xs bg-green-100 text-green-800 border border-green-200" title="เก็บเกี่ยวเอง">🌱 เก็บเกี่ยว</span>'}
                                         </div>
                                         <div class="text-sm text-gray-500">เกษตรกร: ${lot.farmer_name || lot.farmer_id || '-'}</div>
                                     </div>
@@ -7839,6 +7861,11 @@
             title.textContent = `รวมล้าง ${selectedSortedLots.size} Lot`;
             overlay.classList.remove('hidden');
 
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const currentTime = `${hours}:${minutes}`;
+
             content.innerHTML = `
                 <form class="space-y-4" id="combined-cleaning-form">
                     <input type="hidden" name="lot_ids" value="${lotIds.join(',')}">
@@ -7884,7 +7911,7 @@
                     
                      <div>
                         <label class="block text-sm font-medium mb-1">เวลาจบงาน</label>
-                        <input type="time" name="cleaning_end_time" required class="w-full border rounded p-2">
+                        <input type="time" name="cleaning_end_time" value="${currentTime}" readonly class="w-full border rounded p-2 bg-gray-100 cursor-not-allowed">
                     </div>
                     
                     <div class="p-3 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
@@ -8016,9 +8043,11 @@
                 // Create Lot
                 // If "Receive Goods" mode (Case 2), set initial state to HARVESTED (Ready to Sort)
                 if (data.form_mode === 'receive_goods') {
-                    data.initial_state = 'HARVESTED';
+                    data.initial_state = 'RECEIVED';
+                    data.lot_source = 'receive';
                 } else {
                     data.initial_state = 'PENDING'; // Start Harvest
+                    data.lot_source = 'harvest';
                 }
 
                 google.script.run
@@ -8045,7 +8074,13 @@
 
                 // Logic based on process_step
                 if (data.process_step === 'end_harvest') nextState = 'HARVESTED';
-                else if (data.process_step === 'sorting') nextState = 'SORTED';
+                else if (data.process_step === 'sorting') {
+                    nextState = 'SORTED';
+                    // Self-healing: If transition from RECEIVED, ensure lot_source is set
+                    if (data.current_state === 'RECEIVED') {
+                        data.lot_source = 'receive';
+                    }
+                }
                 else if (data.process_step === 'cleaning') nextState = 'CLEANED';
                 else if (data.process_step === 'drying') nextState = 'DRIED';
                 else if (data.process_step === 'grinding') nextState = 'GROUND';
@@ -8143,6 +8178,11 @@
                     </div>
                     
                     <div>
+                        <label class="block text-sm font-medium mb-1">จำนวนถุงที่เก็บ</label>
+                        <input type="number" name="harvest_bag_count" required min="1" class="w-full border rounded p-2" placeholder="ระบุจำนวนถุง">
+                    </div>
+                    
+                    <div>
                         <label class="block text-sm font-medium mb-1">ปริมาณที่เก็บจริง (กก.)</label>
                         <input type="number" name="qty_harvested" required min="0.1" step="0.1" class="w-full border rounded p-2 text-lg font-bold">
                     </div>
@@ -8181,13 +8221,18 @@
                     </div>
 
                     <div>
+                        <label class="block text-sm font-medium mb-1">จำนวนถุงที่รับซื้อ</label>
+                        <input type="number" name="receive_bag_count" required min="1" class="w-full border rounded p-2" placeholder="ระบุจำนวนถุง">
+                    </div>
+
+                    <div>
                         <label class="block text-sm font-medium mb-1">น้ำหนักรับเข้า (กก.)</label>
                         <input type="number" name="qty_harvested" required min="0.1" step="0.1" class="w-full border rounded p-2 text-lg font-bold">
                         <small class="text-gray-500">น้ำหนักสดที่รับเข้าเพื่อรอคัดแยก</small>
                     </div>
                     
                     <div class="p-3 bg-green-50 rounded border border-green-200 text-sm text-green-800">
-                        <span class="font-bold">Info:</span> เมื่อบันทึกแล้ว Lot จะมีสถานะ "เก็บเกี่ยวแล้ว" พร้อมสำหรับการคัดแยก
+                        <span class="font-bold">Info:</span> เมื่อบันทึกแล้ว Lot จะมีสถานะ "รับซื้อแล้ว" พร้อมสำหรับการคัดแยก
                     </div>
                 </form>
              `;
@@ -8638,13 +8683,15 @@
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                              <label class="block text-sm font-medium mb-1">จำนวนหน่วยบรรจุ</label>
-                             <input type="number" name="packing_unit_count" required min="1" class="w-full border rounded p-2">
+                             <input type="number" name="packing_unit_count" required min="1" class="w-full border rounded p-2" oninput="renderPackingMoistureInputs(this.value, 'moisture-inputs-1')">
                         </div>
                         <div>
                              <label class="block text-sm font-medium mb-1 text-green-700 font-bold">น้ำหนักรวม (กก.)</label>
                              <input type="number" name="packing_total_weight" required min="0.1" step="0.1" class="w-full border rounded p-2 bg-green-50 border-green-400">
                         </div>
                     </div>
+                    
+                    <div id="moisture-inputs-1"></div>
                     
                     <div>
                         <label class="block text-sm font-medium mb-1">วันที่ผลิต (MFG)</label>
@@ -8774,13 +8821,18 @@
             win.document.close();
         }
 
-        function openLotAction(lotId, currentState) {
-            console.log(`Open Lot: ${lotId}, State: ${currentState}`);
+        function openLotAction(lotId, currentState, source = 'harvest') {
+            console.log(`Open Lot: ${lotId}, State: ${currentState}, Source: ${source}`);
 
             const overlay = document.getElementById('delivery-form-overlay');
             const content = document.getElementById('delivery-form-content');
             const title = document.getElementById('delivery-form-title');
             const btn = document.getElementById('delivery-form-submit-btn');
+
+            // Source Badge HTML
+            const sourceBadge = source === 'receive'
+                ? '<span class="ml-2 px-2 py-0.5 rounded text-sm bg-purple-100 text-purple-800 border border-purple-200">💰 รับซื้อ</span>'
+                : '<span class="ml-2 px-2 py-0.5 rounded text-sm bg-green-100 text-green-800 border border-green-200">🌱 เก็บเกี่ยว</span>';
 
             // Reset Button
             btn.innerText = "บันทึก";
@@ -8796,31 +8848,31 @@
 
             // Determine Form based on State
             if (currentState === 'PENDING') {
-                title.textContent = `บันทึกผลการเก็บเกี่ยว (End Harvest) - ${lotId}`;
+                title.innerHTML = `บันทึกผลการเก็บเกี่ยว (End Harvest) - ${lotId} ${sourceBadge}`;
                 content.innerHTML = renderEndHarvestForm(lotId);
                 newBtn.innerText = "จบการเก็บ";
-            } else if (currentState === 'HARVESTED') {
-                title.textContent = `ขั้นตอนที่ 2: การคัดแยก (Sorting) - ${lotId}`;
+            } else if (currentState === 'HARVESTED' || currentState === 'RECEIVED') {
+                title.innerHTML = `ขั้นตอนที่ 2: การคัดแยก (Sorting) - ${lotId} ${sourceBadge}`;
                 content.innerHTML = renderSortingForm(lotId);
                 newBtn.innerText = "ปิดการคัด";
             } else if (currentState === 'SORTED') {
-                title.textContent = `ขั้นตอนที่ 3: การล้าง (Cleaning) - ${lotId}`;
+                title.innerHTML = `ขั้นตอนที่ 3: การล้าง (Cleaning) - ${lotId} ${sourceBadge}`;
                 content.innerHTML = renderCleaningForm(lotId);
                 newBtn.innerText = "ปิดการล้าง";
             } else if (currentState === 'CLEANED') {
-                title.textContent = `ขั้นตอนที่ 4: การอบแห้ง (Drying) - ${lotId}`;
+                title.innerHTML = `ขั้นตอนที่ 4: การอบแห้ง (Drying) - ${lotId} ${sourceBadge}`;
                 content.innerHTML = renderDryingForm(lotId);
                 newBtn.innerText = "จบการอบ";
             } else if (currentState === 'DRIED') {
-                title.textContent = `ขั้นตอนที่ 5: การบดผง (Grinding) - ${lotId}`;
+                title.innerHTML = `ขั้นตอนที่ 5: การบดผง (Grinding) - ${lotId} ${sourceBadge}`;
                 content.innerHTML = renderGrindingForm(lotId);
                 newBtn.innerText = "จบบด";
             } else if (currentState === 'GROUND') {
-                title.textContent = `ขั้นตอนที่ 6: การแพ็ค (Packing) - ${lotId}`;
+                title.innerHTML = `ขั้นตอนที่ 6: การแพ็ค (Packing) - ${lotId} ${sourceBadge}`;
                 content.innerHTML = renderPackingForm(lotId);
                 newBtn.innerText = "ปิด Lot";
             } else if (currentState === 'PACKED') {
-                title.textContent = `จัดการ Lot: ${lotId} (พร้อมส่ง)`;
+                title.innerHTML = `จัดการ Lot: ${lotId} (พร้อมส่ง) ${sourceBadge}`;
                 // Special View for PACKED: Options to Ship or Print QR
                 content.innerHTML = `
                     <div class="grid grid-cols-2 gap-4">
@@ -9131,13 +9183,10 @@
                     
                     <div>
                          <label class="block text-sm font-medium mb-1">จำนวน (ถุง/กล่อง)</label>
-                         <input type="number" name="packing_qty" required min="1" class="w-full border rounded p-2">
+                         <input type="number" name="packing_qty" required min="1" class="w-full border rounded p-2" oninput="renderPackingMoistureInputs(this.value, 'moisture-inputs-2')">
                     </div>
                     
-                    <div>
-                         <label class="block text-sm font-medium mb-1">ความชื้นก่อนส่ง (%)</label>
-                         <input type="number" name="packing_moisture" required min="0" max="100" step="0.01" class="w-full border rounded p-2">
-                    </div>
+                    <div id="moisture-inputs-2"></div>
                     
                     <div>
                          <label class="block text-sm font-medium mb-1">ข้อมูลคุณภาพ / หมายเหตุ</label>
@@ -9244,7 +9293,7 @@
                 const updated = new Date(l.updated_at).toLocaleDateString('th-TH');
                 lotsRows += `
                     <tr class="border-t hover:bg-gray-50">
-                        <td class="px-4 py-3 font-medium text-blue-600 cursor-pointer" onclick="openLotAction('${l.lot_id}', '${l.state}')">${l.lot_id}</td>
+                        <td class="px-4 py-3 font-medium text-blue-600 cursor-pointer" onclick="openLotAction('${l.lot_id}', '${l.state}', '${(l.data && l.data.lot_source) || 'harvest'}')">${l.lot_id}</td>
                         <td class="px-4 py-3">
                             <span class="px-2 py-1 rounded text-xs bg-gray-100">${LOT_STATES[l.state] || l.state}</span>
                         </td>
@@ -9258,6 +9307,35 @@
                  `;
             });
             document.getElementById('ad-prod-lots-table').innerHTML = lotsRows;
+        }
+
+        // Helper to render dynamic moisture inputs
+        function renderPackingMoistureInputs(count, containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            // clear if empty/invalid
+            if (!count || count < 0) {
+                container.innerHTML = '';
+                return;
+            }
+
+            let html = '<div class="space-y-3 mt-4">';
+            html += '<label class="block text-sm font-medium mb-1 text-blue-700">ค่าความชื้นรายถุง/กล่อง</label>';
+
+            for (let i = 1; i <= count; i++) {
+                html += `
+                    <div class="flex items-center gap-3">
+                        <span class="text-sm font-bold w-12 pt-2">ถุง ${i}</span>
+                        <div class="flex-1">
+                            <input type="number" name="packing_moisture_${i}" placeholder="ความชื้น %" 
+                                min="0" max="100" step="0.01" class="w-full border rounded p-2">
+                        </div>
+                    </div>
+                `;
+            }
+            html += '</div>';
+            container.innerHTML = html;
         }
 
     </script>

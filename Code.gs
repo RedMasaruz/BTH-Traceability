@@ -2582,18 +2582,22 @@ function getAgentLots(sessionToken) {
     const idxUpdated = headers.indexOf('updated_at');
     const idxData = headers.indexOf('data_json');
     const idxRiskScore = headers.indexOf('risk_score');
+    const idxHistory = headers.indexOf('history_json');
     
     const lots = [];
     
     // Start from row 1
     for (let i = 1; i < values.length; i++) {
-      const agentId = String(values[i][idxAgent]);
+            const agentId = String(values[i][idxAgent]);
       
       // Strict match on username
       if (agentId === session.username) { 
          const row = values[i];
          let dataObj = {};
          try { dataObj = JSON.parse(row[idxData]); } catch(e) {}
+
+         let history = [];
+         try { history = JSON.parse(row[idxHistory] || '[]'); } catch(e) {}
          
          lots.push({
            lot_id: row[idxId],
@@ -2603,7 +2607,9 @@ function getAgentLots(sessionToken) {
            farmer_id: dataObj.farmer_id || '',
            farmer_name: dataObj.farmer_name || '',
            qty_harvested: dataObj.qty_harvested || 0,
-           risk_score: row[idxRiskScore] || 0
+           risk_score: row[idxRiskScore] || 0,
+           data: dataObj, // Return full data object
+           history: history // Return history for robust source checking
          });
       }
     }
