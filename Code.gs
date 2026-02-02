@@ -116,25 +116,67 @@ const MAX_SPECIES_NAME_LENGTH = 100;
 function getLongOptions() {
   try {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID_A);
-    const sheet = ss.getSheetByName('AgentOptions');
+
+    let options = [{ value: "", text: "--- เลือกตัวแทนที่สังกัด ---" }];
     
-    if (!sheet) {
-      console.log('⚠️ AgentOptions sheet not found, returning empty option');
-      return { success: true, options: [{ value: "", text: "--- เลือกตัวแทนที่สังกัด ---" }] };
+    // 1. Try AgentOptions Sheet (Dedicated Options)
+    let sheet = ss.getSheetByName('AgentOptions');
+    if (sheet) {
+        const data = sheet.getDataRange().getValues();
+        if (data.length > 1) {
+            for (let i = 1; i < data.length; i++) {
+                const agentName = data[i][0];
+                if (agentName && String(agentName).trim()) {
+                    const displayName = String(agentName).trim();
+                    const valueWithPrefix = 'ตัวแทน' + displayName;
+                    options.push({ value: valueWithPrefix, text: displayName });
+                }
+            }
+        }
+    }
+
+    // 2. Fallback: UserAdmin Sheet (Registered Users)
+    if (options.length === 1) {
+        // Only default option exists
+        const userSheet = ss.getSheetByName(USER_ADMIN_SHEET_NAME);
+        if (userSheet) {
+            const userData = userSheet.getDataRange().getValues();
+            // Headers: username, password, long_name, email, role, created_at
+            // Index: 2=long_name, 4=role
+            // Filter: Role = 'agent' or 'admin' or just all valid users with long_name
+            for (let i = 1; i < userData.length; i++) {
+                const longName = userData[i][2];
+                // const role = userData[i][4]; // Optional filtering
+                if (longName && String(longName).trim()) {
+                    const displayName = String(longName).trim();
+                    // Avoid duplicates if both sheets have same data (unlikely if options.length currently 1)
+                     const valueWithPrefix = 'ตัวแทน' + displayName;
+                     options.push({ value: valueWithPrefix, text: displayName });
+                }
+            }
+        }
     }
     
-    const data = sheet.getDataRange().getValues();
-    const options = [{ value: "", text: "--- เลือกตัวแทนที่สังกัด ---" }];
-    
-    // Skip header row (row 0), read column A (agent name)
-    for (let i = 1; i < data.length; i++) {
-      const agentName = data[i][0];
-      if (agentName && String(agentName).trim()) {
-        const displayName = String(agentName).trim();
-        // Add 'ตัวแทน' prefix to value for Sheet B reference
-        const valueWithPrefix = 'ตัวแทน' + displayName;
-        options.push({ value: valueWithPrefix, text: displayName });
-      }
+    // 3. Fallback: Legacy Users Sheet (If UserAdmin also empty/missing)
+    if (options.length === 1) {
+         try {
+             const legacySheet = ss.getSheetByName(SHEET_A_NAME); // Users sheet
+             if (legacySheet) {
+                  const legData = legacySheet.getDataRange().getValues();
+                  // Assuming Column B (Index 1) is Name or similar. 
+                  // legacy format might vary, but usually Name is early column.
+                  // Let's rely on standard column 2 (Index 1) 'Name' if exists.
+                  for (let i = 1; i < legData.length; i++) {
+                      // Heuristic: check if looks like a name
+                       const possibleName = legData[i][1]; 
+                       if (possibleName && typeof possibleName === 'string' && possibleName.length > 2) {
+                            const displayName = possibleName.trim();
+                            const valueWithPrefix = 'ตัวแทน' + displayName;
+                            options.push({ value: valueWithPrefix, text: displayName });
+                       }
+                  }
+             }
+         } catch(e) {}
     }
     
     console.log(`✅ getLongOptions: Loaded ${options.length - 1} agents`);
@@ -182,6 +224,8 @@ function doGet(e) {
   // Usage: <SCRIPT_URL>?view=trace&lotId=LOT-XXXX
   if (view === 'trace') {
     const lotId = params.lotId;
+    const packageIndex = params.p || null;
+    
     if (!lotId) return ContentService.createTextOutput("Lot ID is required").setMimeType(ContentService.MimeType.TEXT);
     
     // Fetch lot data
@@ -191,6 +235,7 @@ function doGet(e) {
     // Render simple HTML view
     const template = HtmlService.createTemplateFromFile('traceability_view');
     template.lot = lotData;
+    template.packageIndex = packageIndex;
     return template.evaluate()
       .setTitle('BTH Traceability: ' + lotId)
       .addMetaTag('viewport', 'width=device-width, initial-scale=1')

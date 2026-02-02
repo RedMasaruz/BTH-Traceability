@@ -133,6 +133,16 @@
                     <?= lot.id ?>
                 </div>
             </div>
+            <? if (packageIndex) { ?>
+            <div>
+                <div class="label">บรรจุภัณฑ์ (Package)</div>
+                <div class="value">
+                    <?= packageIndex ?> <span style="font-size:12px;color:#9ca3af;">/
+                        <?= lot.data.packing_qty || 1 ?>
+                    </span>
+                </div>
+            </div>
+            <? } ?>
             <div>
                 <div class="label">สินค้า (Product)</div>
                 <div class="value">กระท่อม (Kratom) -

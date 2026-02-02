@@ -7681,6 +7681,9 @@
             if (target) observer.observe(target, { attributes: true, attributeFilter: ['class'] });
         });
 
+        // Global Cache for Lot Data
+        window.GLOBAL_LOTS_CACHE = {};
+
         function loadActiveLots() {
             const container = document.getElementById('delivery-active-lots-container');
             const token = sessionStorage.getItem('sessionToken');
@@ -7708,6 +7711,9 @@
 
         function renderActiveLots(lots) {
             const container = document.getElementById('delivery-active-lots-container');
+            // Cache lots data
+            lots.forEach(lot => { window.GLOBAL_LOTS_CACHE[lot.lot_id] = lot; });
+
             // Clear selected lots when reloading
             selectedSortedLots.clear();
             updateCombineCleaningButton();
@@ -8716,7 +8722,11 @@
         }
 
         // --- SHIPPING FORM ---
-        function renderShippingForm(lotId) {
+        function renderShippingForm(lotId, qty = 1) {
+            const qtyBadge = qty > 1
+                ? `<span class="bg-green-600 text-white text-xs px-2 py-0.5 rounded ml-2">${qty} แพ็คเกจ</span>`
+                : '';
+
             return `
                 <form class="space-y-4">
                     <input type="hidden" name="lot_id" value="${lotId}">
@@ -8729,7 +8739,7 @@
                             </svg>
                          </div>
                         <div>
-                             <h4 class="font-bold text-green-800 text-sm">บันทึกการจัดส่งสินค้า (Shipping)</h4>
+                             <h4 class="font-bold text-green-800 text-sm">บันทึกการจัดส่งสินค้า (Shipping) ${qtyBadge}</h4>
                              <p class="text-xs text-green-600 mt-1">กรุณาระบุข้อมูลผู้รับปลายทางและเลขพัสดุ</p>
                         </div>
                     </div>
@@ -8775,36 +8785,77 @@
 
         // --- QR CODE MODAL RENDER ---
         function renderQRCodeModal(lotId) {
-            // Generate Traceability URL
-            // Assuming Web App URL is global BACKEND_URL, but we need the script url for doGet view
-            // Since BACKEND_URL uses /exec, we can use it directly? Yes.
-            const traceUrl = `${BACKEND_URL}?view=trace&lotId=${lotId}`;
-            const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(traceUrl)}`;
+            // Retrieve Lot Data from Cache
+            const lot = window.GLOBAL_LOTS_CACHE ? window.GLOBAL_LOTS_CACHE[lotId] : null;
+            const packingQty = lot && lot.data && lot.data.packing_qty ? parseInt(lot.data.packing_qty) : 1;
+
+            let qrGridHtml = '';
+            let printButtonHtml = '';
+
+            if (packingQty > 1) {
+                // Multiple Packages
+                qrGridHtml = `<div class="grid grid-cols-2 md:grid-cols-3 gap-6 max-h-[60vh] overflow-y-auto p-2">`;
+
+                for (let i = 1; i <= packingQty; i++) {
+                    const traceUrl = `${BACKEND_URL}?view=trace&lotId=${lotId}&p=${i}`;
+                    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(traceUrl)}`;
+
+                    qrGridHtml += `
+                        <div class="bg-white p-4 rounded-xl shadow border border-gray-100 flex flex-col items-center">
+                            <span class="text-xs font-bold bg-slate-100 px-2 py-1 rounded mb-2">Package ${i}/${packingQty}</span>
+                            <img src="${qrApiUrl}" alt="QR Code ${i}" class="mb-2" width="120" height="120">
+                            <p class="text-[10px] text-gray-400 font-mono break-all text-center w-full">${lotId}-${i}</p>
+                        </div>
+                     `;
+                }
+                qrGridHtml += `</div>`;
+
+                // Print All Button
+                printButtonHtml = `
+                    <button type="button" onclick="printAllQRCodes('${lotId}', ${packingQty})" 
+                        class="flex items-center gap-2 px-6 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-900 shadow-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                        </svg>
+                        พิมพ์ Label (${packingQty} ดวง)
+                    </button>
+                `;
+
+            } else {
+                // Single Package
+                const traceUrl = `${BACKEND_URL}?view=trace&lotId=${lotId}`;
+                const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(traceUrl)}`;
+
+                qrGridHtml = `
+                    <div class="text-center space-y-4">
+                        <div class="bg-white p-4 inline-block rounded-xl shadow border border-gray-100">
+                            <img src="${qrApiUrl}" alt="QR Code" class="mx-auto" width="200" height="200">
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-gray-500 mb-1">LOT ID</p>
+                            <p class="text-2xl font-black text-slate-800 tracking-wider font-mono">${lotId}</p>
+                        </div>
+                    </div>
+                `;
+
+                printButtonHtml = `
+                    <button type="button" onclick="printQRCode('${lotId}', '${qrApiUrl}')" 
+                        class="flex items-center gap-2 px-6 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-900 shadow-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                        </svg>
+                        พิมพ์ Label
+                    </button>
+                `;
+            }
 
             return `
                 <div class="text-center space-y-6 py-4">
-                    <div class="bg-white p-4 inline-block rounded-xl shadow border border-gray-100">
-                        <img src="${qrApiUrl}" alt="QR Code" class="mx-auto" width="200" height="200">
-                    </div>
+                    ${qrGridHtml}
                     
-                    <div>
-                        <p class="text-sm font-bold text-gray-500 mb-1">LOT ID</p>
-                        <p class="text-2xl font-black text-slate-800 tracking-wider font-mono">${lotId}</p>
-                    </div>
-                    
-                    <div class="text-xs text-gray-400 max-w-xs mx-auto break-all">
-                        ${traceUrl}
-                    </div>
-
-                    <div class="flex justify-center gap-3 pt-4">
-                        <button type="button" onclick="printQRCode('${lotId}', '${qrApiUrl}')" 
-                            class="flex items-center gap-2 px-6 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-900 shadow-lg">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                            </svg>
-                            พิมพ์ Label
-                        </button>
-                         <button type="button" onclick="window.open('${traceUrl}', '_blank')" 
+                    <div class="flex justify-center gap-3 pt-4 border-t border-gray-100 mt-4">
+                        ${printButtonHtml}
+                         <button type="button" onclick="window.open('${BACKEND_URL}?view=trace&lotId=${lotId}', '_blank')" 
                             class="flex items-center gap-2 px-6 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -8814,6 +8865,50 @@
                     </div>
                 </div>
              `;
+        }
+
+        function printAllQRCodes(lotId, qty) {
+            const win = window.open('', '', 'height=600,width=800');
+            win.document.write('<html><head><title>Print Labels</title>');
+            win.document.write(`
+                <style>
+                    body { font-family: sans-serif; text-align: center; padding: 20px; }
+                    .label-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; }
+                    .label { 
+                        border: 2px solid #000; 
+                        padding: 10px; 
+                        display: inline-block; 
+                        border-radius: 10px; 
+                        width: 250px;
+                        page-break-inside: avoid;
+                        margin-bottom: 20px;
+                    }
+                    h1 { margin: 5px 0; font-size: 20px; }
+                    p { margin: 0; font-size: 12px; }
+                    .pkg { font-size: 14px; font-weight: bold; background: #eee; padding: 2px 8px; border-radius: 4px; display: inline-block; margin-bottom: 5px; }
+                    @media print {
+                        .label { page-break-inside: avoid; }
+                    }
+                </style>
+             `);
+            win.document.write('</head><body>');
+            win.document.write('<div class="label-container">');
+
+            for (let i = 1; i <= qty; i++) {
+                const traceUrl = `${BACKEND_URL}?view=trace&lotId=${lotId}&p=${i}`;
+                const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(traceUrl)}`;
+
+                win.document.write('<div class="label">');
+                win.document.write(`<div class="pkg">Package ${i}/${qty}</div><br>`);
+                win.document.write(`<img src="${qrApiUrl}" width="150"><br>`);
+                win.document.write(`<h1>${lotId}</h1>`);
+                win.document.write('<p>BTH Traceability System</p>');
+                win.document.write('</div>');
+            }
+
+            win.document.write('</div>');
+            win.document.write('<script>window.onload = function(){ window.print(); window.close(); }<\/script>');
+            win.document.write('</body></html>');
         }
 
         function printQRCode(lotId, imgUrl) {
@@ -8940,8 +9035,12 @@
             const btn = document.getElementById('delivery-form-submit-btn');
             const title = document.getElementById('delivery-form-title');
 
+            // Retrieve Lot Data from Cache
+            const lot = window.GLOBAL_LOTS_CACHE ? window.GLOBAL_LOTS_CACHE[lotId] : null;
+            const packingQty = lot && lot.data && lot.data.packing_qty ? parseInt(lot.data.packing_qty) : 1;
+
             title.textContent = `บันทึกการจัดส่ง - ${lotId}`;
-            content.innerHTML = renderShippingForm(lotId);
+            content.innerHTML = renderShippingForm(lotId, packingQty);
 
             btn.innerText = "ยืนยันการส่ง";
             btn.classList.remove('hidden');
