@@ -7655,6 +7655,7 @@
             DRIED: "อบแห้งแล้ว",
             GROUND: "บดผงแล้ว",
             PACKED: "บรรจุแล้ว",
+            SHIPPED: "จัดส่งแล้ว",
             MERGED: "รวม Lot แล้ว"
         };
 
@@ -7889,6 +7890,7 @@
                 else if (lot.state === 'RECEIVED') stateColor = "bg-purple-100 text-purple-800";
                 else if (lot.state === 'SORTED') stateColor = "bg-cyan-100 text-cyan-800";
                 else if (lot.state === 'CLEANED') stateColor = "bg-teal-100 text-teal-800";
+                else if (lot.state === 'SHIPPED') stateColor = "bg-green-100 text-green-800";
 
                 // Risk display
                 let riskHtml = '';
@@ -8217,6 +8219,7 @@
                 else if (data.process_step === 'drying') nextState = 'DRIED';
                 else if (data.process_step === 'grinding') nextState = 'GROUND';
                 else if (data.process_step === 'packing') nextState = 'PACKED';
+                else if (data.process_step === 'shipping') nextState = 'SHIPPED';
 
                 google.script.run
                     .withSuccessHandler(res => {
