@@ -2232,7 +2232,7 @@ function getLotsSheet() {
   
   // Expanded Headers Definition
   const standardHeaders = [
-    "lot_id", "state", "agent_id", "farmer_id", "created_at", "updated_at",
+    "lot_id", "state", "source", "agent_id", "farmer_id", "created_at", "updated_at",
     "data_json", "history_json", "risk_score", "risk_flags", "is_active",
     // New Process Columns
     "harvest_date", "harvest_details",
@@ -2312,8 +2312,21 @@ function createLot(data, sessionToken) {
       if (idx > -1) row[idx] = val;
     };
     
+    // Determine Source Type
+    let sourceType = data.source_type; 
+    if (!sourceType) {
+        // Fallback inference
+        if (initialState === 'PENDING') sourceType = 'harvest';
+        else if (initialState === 'RECEIVED') sourceType = 'receive';
+        else sourceType = 'harvest'; // Default
+    }
+    
+    // Lock source type into data
+    initialData.source = sourceType;
+
     setCol("lot_id", lotId);
     setCol("state", initialState);
+    setCol("source", sourceType); // New Column
     setCol("agent_id", data.agent_id || session.username);
     setCol("farmer_id", data.farmer_id || '');
     setCol("created_at", now);

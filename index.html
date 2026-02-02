@@ -8336,33 +8336,38 @@
 
             overlay.classList.remove('hidden');
 
+            // Generate Source Badge
+            const sourceBadge = (source === 'receive')
+                ? '<span class="ml-2 px-2 py-0.5 rounded text-sm bg-purple-100 text-purple-800 border border-purple-200">💰 รับซื้อ</span>'
+                : '<span class="ml-2 px-2 py-0.5 rounded text-sm bg-green-100 text-green-800 border border-green-200">🌱 เก็บเกี่ยว</span>';
+
             // Determine Form based on State
             if (currentState === 'PENDING') {
-                title.textContent = `บันทึกผลการเก็บเกี่ยว (End Harvest) - ${lotId}`;
+                title.innerHTML = `บันทึกผลการเก็บเกี่ยว (End Harvest) - ${lotId} ${sourceBadge}`;
                 content.innerHTML = renderEndHarvestForm(lotId);
                 btn.innerText = "จบการเก็บ";
             } else if (currentState === 'HARVESTED') {
-                title.textContent = `ขั้นตอนที่ 2: การคัดแยก (Sorting) - ${lotId}`;
+                title.innerHTML = `ขั้นตอนที่ 2: การคัดแยก (Sorting) - ${lotId} ${sourceBadge}`;
                 content.innerHTML = renderSortingForm(lotId);
                 btn.innerText = "ปิดการคัด";
             } else if (currentState === 'SORTED') {
-                title.textContent = `ขั้นตอนที่ 3: การล้าง (Cleaning) - ${lotId}`;
+                title.innerHTML = `ขั้นตอนที่ 3: การล้าง (Cleaning) - ${lotId} ${sourceBadge}`;
                 content.innerHTML = renderCleaningForm(lotId);
                 btn.innerText = "ปิดการล้าง";
             } else if (currentState === 'CLEANED') {
-                title.textContent = `ขั้นตอนที่ 4: การอบแห้ง (Drying) - ${lotId}`;
+                title.innerHTML = `ขั้นตอนที่ 4: การอบแห้ง (Drying) - ${lotId} ${sourceBadge}`;
                 content.innerHTML = renderDryingForm(lotId);
                 btn.innerText = "จบการอบ";
             } else if (currentState === 'DRIED') {
-                title.textContent = `ขั้นตอนที่ 5: การบดผง (Grinding) - ${lotId}`;
+                title.innerHTML = `ขั้นตอนที่ 5: การบดผง (Grinding) - ${lotId} ${sourceBadge}`;
                 content.innerHTML = renderGrindingForm(lotId);
                 btn.innerText = "จบบด";
             } else if (currentState === 'GROUND') {
-                title.textContent = `ขั้นตอนที่ 6: การแพ็ค (Packing) - ${lotId}`;
+                title.innerHTML = `ขั้นตอนที่ 6: การแพ็ค (Packing) - ${lotId} ${sourceBadge}`;
                 content.innerHTML = renderPackingForm(lotId);
                 btn.innerText = "ปิด Lot";
             } else if (currentState === 'PACKED') {
-                title.textContent = `จัดการ Lot: ${lotId} (พร้อมส่ง)`;
+                title.innerHTML = `จัดการ Lot: ${lotId} (พร้อมส่ง) ${sourceBadge}`;
                 // Special View for PACKED: Options to Ship or Print QR
                 content.innerHTML = `
                     <div class="grid grid-cols-2 gap-4">
@@ -8428,7 +8433,7 @@
                 `;
                 btn.classList.add('hidden'); // Hide submit button
             } else if (currentState === 'SHIPPED') {
-                title.textContent = `รายละเอียด Lot ${lotId} (จัดส่งแล้ว)`;
+                title.innerHTML = `รายละเอียด Lot ${lotId} (จัดส่งแล้ว) ${sourceBadge}`;
                 content.innerHTML = `<div class="p-4 text-center text-green-600 font-bold flex flex-col items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
