@@ -2228,13 +2228,41 @@ function calculateGACPStatusServer(checkData) {
 function getLotsSheet() {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID_A);
   let sheet = ss.getSheetByName(SHEET_LOTS_NAME);
+  
+  const headers = [
+    "lot_id", "state", "แหล่งที่มา", // Changed lot_source to Thai
+    "agent_id", "farmer_id", 
+    "created_at", "updated_at",
+    
+    // Process Specific Columns (Thai)
+    "วันที่เก็บเกี่ยว", "รายละเอียดการเก็บเกี่ยว",
+    "วันที่รับซื้อ", "รายละเอียดการรับซื้อ",
+    "วันที่คัดแยก", "รายละเอียดการคัดแยก",
+    "วันที่ทำความสะอาด", "รายละเอียดการทำความสะอาด",
+    "วันที่อบ", "รายละเอียดการอบ",
+    "วันที่บด", "รายละเอียดการบด",
+    "วันที่บรรจุ", "รายละเอียดการบรรจุ",
+    "วันที่ส่ง", "รายละเอียดการส่ง",
+    
+    // Combined Logic
+    "เป็นการรวมLot", "รวมจากLot", // is_combined, combined_from_lots
+    
+    // Legacy / Metadata
+    "data_json", "history_json", "risk_score", "risk_flags", "is_active"
+  ];
+
   if (!sheet) {
     sheet = ss.insertSheet(SHEET_LOTS_NAME);
-    const headers = [
-      "lot_id", "state", "agent_id", "farmer_id", "created_at", "updated_at",
-      "data_json", "history_json", "risk_score", "risk_flags", "is_active"
-    ];
     sheet.getRange(1, 1, 1, headers.length).setValues([headers]).setFontWeight('bold').setBackground('#ffe0b2');
+  } else {
+    // Check and append missing columns if sheet exists
+    const currentHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(h => String(h).trim());
+    const missingHeaders = headers.filter(h => !currentHeaders.includes(h));
+    
+    if (missingHeaders.length > 0) {
+      const startCol = currentHeaders.length + 1;
+      sheet.getRange(1, startCol, 1, missingHeaders.length).setValues([missingHeaders]).setFontWeight('bold').setBackground('#ffe0b2');
+    }
   }
   return sheet;
 }
@@ -2267,21 +2295,54 @@ function createLot(data, sessionToken) {
     // Extended fields support (No schema change, just ensuring JSON stringify captures everything)
     // data should contain: farmer_id, farmer_name, province, district, species, time_slot, container_size, etc.
     
-    const row = [
-      lotId, 
-      initialState, 
-      data.agent_id || session.username, 
-      data.farmer_id || '', 
-      now, 
-      now, 
-      JSON.stringify(initialData), 
-      JSON.stringify(initialData.timeline), 
-      0, 
-      "[]", 
-      true
-    ];
+    // Determine Source and fill specific columns
+    const lotSource = data.lot_source || (initialState === 'RECEIVED' ? 'receive' : 'harvest');
     
-    sheet.appendRow(row);
+    // Prepare column data
+    let harvestDate = '', harvestDetails = '';
+    let receiveDate = '', receiveDetails = '';
+    
+    // If creating a lot that is already 'HARVESTED' or 'PENDING' (Harvest Flow)
+    if (lotSource === 'harvest') {
+        // Even if pending, we might have some details (farmer, location)
+        harvestDetails = JSON.stringify(data);
+        if (initialState === 'HARVESTED') harvestDate = now;
+    } 
+    // If creating a 'Receive' lot
+    else if (lotSource === 'receive') {
+        receiveDate = now;
+        receiveDetails = JSON.stringify(data);
+    }
+
+    const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    const newRow = new Array(headers.length).fill('');
+    
+    // Helper to set value by header name
+    const setVal = (header, val) => {
+        const idx = headers.indexOf(header);
+        if (idx !== -1) newRow[idx] = val;
+    };
+    
+    setVal('lot_id', lotId);
+    setVal('state', initialState);
+    setVal('แหล่งที่มา', lotSource); // Changed to Thai
+    setVal('agent_id', data.agent_id || session.username);
+    setVal('farmer_id', data.farmer_id || '');
+    setVal('created_at', now);
+    setVal('updated_at', now);
+    
+    setVal('วันที่เก็บเกี่ยว', harvestDate); // Changed to Thai
+    setVal('รายละเอียดการเก็บเกี่ยว', harvestDetails); // Changed to Thai
+    setVal('วันที่รับซื้อ', receiveDate); // Changed to Thai
+    setVal('รายละเอียดการรับซื้อ', receiveDetails); // Changed to Thai
+    
+    setVal('data_json', JSON.stringify(initialData));
+    setVal('history_json', JSON.stringify(initialData.timeline));
+    setVal('risk_score', 0);
+    setVal('risk_flags', "[]");
+    setVal('is_active', true);
+    
+    sheet.appendRow(newRow);
     
     return { success: true, lot_id: lotId, state: initialState };
     
@@ -2319,7 +2380,20 @@ function updateLotState(lotId, newState, data, sessionToken) {
     
     if(rowIndex === -1) throw new Error('ไม่พบ Lot ID: ' + lotId);
     
-    // Current Data
+    // Find Header Indices dynamically
+    const getIdx = (name) => headers.indexOf(name);
+    
+    const idxState = getIdx('state');
+    const idxData = getIdx('data_json'); // Legacy
+    const idxHistory = getIdx('history_json');
+    const idxUpdated = getIdx('updated_at');
+    const idxRiskScore = getIdx('risk_score');
+    const idxRiskFlags = getIdx('risk_flags');
+    
+    // Current Data (Legacy approach + new approach mix)
+    // We primarily rely on legacy JSON for full state current object, 
+    // but we will WRITE to specific columns for the NEW state data.
+    
     const currentDataJson = values[rowIndex-1][idxData];
     let currentData = {};
     try { currentData = JSON.parse(currentDataJson); } catch(e) {}
@@ -2328,13 +2402,31 @@ function updateLotState(lotId, newState, data, sessionToken) {
     let history = [];
     try { history = JSON.parse(currentHistoryJson); } catch(e) {}
     
-    // Validate Transition (Basic check, more strict logic can be here)
-    // For now, trust the client's requested state, but we log everything.
-    
     const now = new Date();
     
     // Merge new data
     const updatedData = { ...currentData, ...data };
+    
+    // Update Specific Column based on newState
+    let targetCol = '';
+    let targetDateCol = '';
+    
+    if (newState === 'HARVESTED') { targetCol = 'รายละเอียดการเก็บเกี่ยว'; targetDateCol = 'วันที่เก็บเกี่ยว'; }
+    else if (newState === 'RECEIVED') { targetCol = 'รายละเอียดการรับซื้อ'; targetDateCol = 'วันที่รับซื้อ'; }
+    else if (newState === 'SORTED') { targetCol = 'รายละเอียดการคัดแยก'; targetDateCol = 'วันที่คัดแยก'; }
+    else if (newState === 'CLEANED') { targetCol = 'รายละเอียดการทำความสะอาด'; targetDateCol = 'วันที่ทำความสะอาด'; }
+    else if (newState === 'DRIED') { targetCol = 'รายละเอียดการอบ'; targetDateCol = 'วันที่อบ'; }
+    else if (newState === 'GROUND') { targetCol = 'รายละเอียดการบด'; targetDateCol = 'วันที่บด'; }
+    else if (newState === 'PACKED') { targetCol = 'รายละเอียดการบรรจุ'; targetDateCol = 'วันที่บรรจุ'; }
+    else if (newState === 'SHIPPED') { targetCol = 'รายละเอียดการส่ง'; targetDateCol = 'วันที่ส่ง'; }
+    
+    if (targetCol) {
+        const idxTarget = getIdx(targetCol);
+        const idxTargetDate = getIdx(targetDateCol);
+        
+        if (idxTarget !== -1) sheet.getRange(rowIndex, idxTarget + 1).setValue(JSON.stringify(data));
+        if (idxTargetDate !== -1) sheet.getRange(rowIndex, idxTargetDate + 1).setValue(now);
+    }
     
     // Add to history
     history.push({
@@ -2345,11 +2437,9 @@ function updateLotState(lotId, newState, data, sessionToken) {
       details: data
     });
     
-    // Calculate Risk (Simple Placeholder Logic)
+    // Calculate Risk
     let riskScore = 0;
     let riskFlags = [];
-    
-    // Example: If Output > Input (Mass Balance)
     if (updatedData.qty_harvested && updatedData.qty_sorted_remaining) {
        if (parseFloat(updatedData.qty_sorted_remaining) > parseFloat(updatedData.qty_harvested)) {
          riskScore += 50;
@@ -2357,20 +2447,13 @@ function updateLotState(lotId, newState, data, sessionToken) {
        }
     }
 
-    // Special handling for SHIPPED state
-    if (newState === 'SHIPPED') {
-      // Could add specific shipping logic here (e.g., deduct form global inventory if it existed)
-      // For now, just ensuring shipping details are saved in updatedData (which they are)
-    }
-    
-    // Update Row
-    sheet.getRange(rowIndex, idxState + 1).setValue(newState);
-    sheet.getRange(rowIndex, idxData + 1).setValue(JSON.stringify(updatedData));
-    sheet.getRange(rowIndex, idxHistory + 1).setValue(JSON.stringify(history)); // Also save history!
-    
-    sheet.getRange(rowIndex, idxUpdated + 1).setValue(now);
-    sheet.getRange(rowIndex, idxRiskScore + 1).setValue(riskScore);
-    sheet.getRange(rowIndex, idxRiskFlags + 1).setValue(JSON.stringify(riskFlags));
+    // Update Common Columns
+    if (idxState !== -1) sheet.getRange(rowIndex, idxState + 1).setValue(newState);
+    if (idxData !== -1) sheet.getRange(rowIndex, idxData + 1).setValue(JSON.stringify(updatedData));
+    if (idxHistory !== -1) sheet.getRange(rowIndex, idxHistory + 1).setValue(JSON.stringify(history));
+    if (idxUpdated !== -1) sheet.getRange(rowIndex, idxUpdated + 1).setValue(now);
+    if (idxRiskScore !== -1) sheet.getRange(rowIndex, idxRiskScore + 1).setValue(riskScore);
+    if (idxRiskFlags !== -1) sheet.getRange(rowIndex, idxRiskFlags + 1).setValue(JSON.stringify(riskFlags));
     
     return { success: true, state: newState, lot_id: lotId };
     
@@ -2414,12 +2497,26 @@ function updateMultipleLotState(data, sessionToken) {
     const uniquePart = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
     const combinedLotId = `LOT-${dateStr}-CMB-${uniquePart}`;
     
+    // Find Header Indices dynamically
+    const getIdx = (name) => headers.indexOf(name);
+    
     // Collect data from all source lots
     let sourceLots = [];
     let totalQty = 0;
     let farmerNames = [];
     let farmerIds = [];
     let agentId = '';
+    
+    let detectedSource = null; // To enforce strict source consistency
+    
+    const idxId = getIdx('lot_id');
+    const idxState = getIdx('state');
+    const idxAgentId = getIdx('agent_id');
+    const idxFarmerId = getIdx('farmer_id');
+    const idxData = getIdx('data_json');
+    const idxHistory = getIdx('history_json');
+    const idxUpdated = getIdx('updated_at');
+    const idxLotSource = getIdx('แหล่งที่มา'); // Changed to Thai
     
     for (let i = 1; i < values.length; i++) {
       const lotId = String(values[i][idxId]);
@@ -2432,6 +2529,29 @@ function updateMultipleLotState(data, sessionToken) {
         
         let history = [];
         try { history = JSON.parse(values[i][idxHistory] || '[]'); } catch(e) {}
+        
+        // CHECK SOURCE
+        let thisSource = '';
+        if (idxLotSource !== -1) {
+             thisSource = values[i][idxLotSource];
+        }
+        // Fallback if column empty (legacy) -> check data
+        if (!thisSource && currentData.lot_source) thisSource = currentData.lot_source;
+        // Fallback heuristics
+        if (!thisSource) {
+             // Try to guess from state or history (as per previous logic)
+             if (history.some(h => h.state === 'RECEIVED')) thisSource = 'receive';
+             else thisSource = 'harvest';
+        }
+        
+        // Normalize
+        thisSource = thisSource === 'receive' ? 'receive' : 'harvest';
+
+        if (detectedSource === null) {
+            detectedSource = thisSource;
+        } else if (detectedSource !== thisSource) {
+            throw new Error(`ไม่สามารถรวมล้าง Lot ที่มีแหล่งที่มาต่างกันได้ (พบทั้ง ${detectedSource} และ ${thisSource})`);
+        }
         
         sourceLots.push({ lotId, rowIndex, data: currentData, history });
         
@@ -2453,9 +2573,9 @@ function updateMultipleLotState(data, sessionToken) {
           combined_lot_id: combinedLotId
         });
         
-        sheet.getRange(rowIndex, idxState + 1).setValue('MERGED');
-        sheet.getRange(rowIndex, idxHistory + 1).setValue(JSON.stringify(history));
-        sheet.getRange(rowIndex, idxUpdated + 1).setValue(now);
+        if (idxState !== -1) sheet.getRange(rowIndex, idxState + 1).setValue('MERGED');
+        if (idxHistory !== -1) sheet.getRange(rowIndex, idxHistory + 1).setValue(JSON.stringify(history));
+        if (idxUpdated !== -1) sheet.getRange(rowIndex, idxUpdated + 1).setValue(now);
       }
     }
     
@@ -2476,13 +2596,34 @@ function updateMultipleLotState(data, sessionToken) {
       cleaning_round_count: data.cleaning_round_count,
       cleaning_end_time: data.cleaning_end_time,
       is_combined_lot: true,
+      lot_source: detectedSource, // Inherit Source
       timeline: [{ state: 'CLEANED', timestamp: now.getTime(), user: session.username, action: 'combined_cleaning', source_lots: lotIds }]
     };
     
-    const newRow = [
-      combinedLotId, 'CLEANED', agentId || session.username, farmerIds.join(','),
-      now, now, JSON.stringify(combinedData), JSON.stringify(combinedData.timeline), 0, "[]", true
-    ];
+    const newRow = new Array(headers.length).fill('');
+    const setVal = (header, val) => { const idx = getIdx(header); if (idx !== -1) newRow[idx] = val; };
+    
+    setVal('lot_id', combinedLotId);
+    setVal('state', 'CLEANED');
+    setVal('แหล่งที่มา', detectedSource); // Explicitly save source (Thai)
+    setVal('agent_id', agentId || session.username);
+    setVal('farmer_id', [...new Set(farmerIds)].join(','));
+    setVal('created_at', now);
+    setVal('updated_at', now);
+    
+    // Save Cleaning Data Details
+    setVal('วันที่ทำความสะอาด', now); // Thai
+    setVal('รายละเอียดการทำความสะอาด', JSON.stringify(combinedData)); // Thai
+    
+    // Save Combined Flag
+    setVal('เป็นการรวมLot', true); // Thai
+    setVal('รวมจากLot', lotIds.join(',')); // Thai
+    
+    setVal('data_json', JSON.stringify(combinedData));
+    setVal('history_json', JSON.stringify(combinedData.timeline));
+    setVal('risk_score', 0);
+    setVal('risk_flags', "[]");
+    setVal('is_active', true);
     
     sheet.appendRow(newRow);
     
@@ -2509,14 +2650,19 @@ function getLotData(lotId, sessionToken) {
     const idxId = headers.indexOf('lot_id');
     const idxData = headers.indexOf('data_json');
     const idxState = headers.indexOf('state');
+    const idxLotSource = headers.indexOf('แหล่งที่มา'); // Changed to Thai
     
     for(let i=1; i<data.length; i++) {
       if(String(data[i][idxId]) === String(lotId)) {
+        let dataObj = JSON.parse(data[i][idxData] || '{}');
+        if (idxLotSource !== -1 && data[i][idxLotSource]) {
+            dataObj.lot_source = data[i][idxLotSource];
+        }
         return { 
           success: true, 
           lot_id: lotId,
           state: data[i][idxState],
-          data: JSON.parse(data[i][idxData] || '{}') 
+          data: dataObj 
         };
       }
     }
@@ -2553,6 +2699,11 @@ function getAdminDashboardData(sessionToken) {
       try { lot.history = JSON.parse(lot.history_json); } catch(e) {}
       try { lot.risk_flags = JSON.parse(lot.risk_flags); } catch(e) {}
       
+      // Sync lot_source
+      if (lot.lot_source && lot.data) {
+          lot.data.lot_source = lot.lot_source;
+      }
+      
       delete lot.data_json;
       delete lot.history_json;
       
@@ -2583,6 +2734,7 @@ function getAgentLots(sessionToken) {
     const idxData = headers.indexOf('data_json');
     const idxRiskScore = headers.indexOf('risk_score');
     const idxHistory = headers.indexOf('history_json');
+    const idxLotSource = headers.indexOf('แหล่งที่มา'); // Changed to Thai
     
     const lots = [];
     
@@ -2599,6 +2751,12 @@ function getAgentLots(sessionToken) {
          let history = [];
          try { history = JSON.parse(row[idxHistory] || '[]'); } catch(e) {}
          
+         // Inject lot_source from column if available (Source of Truth)
+         if (idxLotSource !== -1) {
+             const colSource = row[idxLotSource];
+             if (colSource) dataObj.lot_source = colSource;
+         }
+         
          lots.push({
            lot_id: row[idxId],
            state: row[idxState],
@@ -2608,7 +2766,7 @@ function getAgentLots(sessionToken) {
            farmer_name: dataObj.farmer_name || '',
            qty_harvested: dataObj.qty_harvested || 0,
            risk_score: row[idxRiskScore] || 0,
-           data: dataObj, // Return full data object
+           data: dataObj, // Return full data object with injected source
            history: history // Return history for robust source checking
          });
       }
