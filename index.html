@@ -7774,7 +7774,7 @@
                                     class="sorted-lot-checkbox w-5 h-5 accent-cyan-600 cursor-pointer"
                                     data-lot-id="${lot.lot_id}"
                                     data-farmer-name="${lot.farmer_name || lot.farmer_id || '-'}"
-                                    onchange="toggleSortedLotSelection('${lot.lot_id}', '${lot.farmer_name || lot.farmer_id || '-'}', this.checked)">
+                                    onchange="toggleSortedLotSelection('${lot.lot_id}', '${lot.farmer_name || lot.farmer_id || '-'}', '${lotSource}', this.checked)">
                             </div>
                         `;
                 }
@@ -7817,9 +7817,9 @@
         }
 
         // Toggle lot selection for combined cleaning
-        function toggleSortedLotSelection(lotId, farmerName, isChecked) {
+        function toggleSortedLotSelection(lotId, farmerName, source, isChecked) {
             if (isChecked) {
-                selectedSortedLots.add({ lotId, farmerName });
+                selectedSortedLots.add({ lotId, farmerName, source });
             } else {
                 selectedSortedLots.forEach(item => {
                     if (item.lotId === lotId) selectedSortedLots.delete(item);
@@ -7858,7 +7858,18 @@
             const lotIds = selectedLotsArray.map(l => l.lotId);
             const farmerNames = [...new Set(selectedLotsArray.map(l => l.farmerName))].join(', ');
 
-            title.textContent = `รวมล้าง ${selectedSortedLots.size} Lot`;
+            // Check Source Consistency
+            const uniqueSources = new Set(selectedLotsArray.map(l => l.source));
+            if (uniqueSources.size > 1) {
+                showCustomAlert('ไม่สามารถรวมล้าง Lot ที่มีแหล่งที่มาต่างกันได้ (รับซื้อ/เก็บเกี่ยว)', 'warning');
+                return;
+            }
+            const commonSource = uniqueSources.values().next().value || 'harvest';
+            const sourceBadge = commonSource === 'receive'
+                ? '<span class="ml-2 px-2 py-0.5 rounded text-sm bg-purple-100 text-purple-800 border border-purple-200">💰 รับซื้อ</span>'
+                : '<span class="ml-2 px-2 py-0.5 rounded text-sm bg-green-100 text-green-800 border border-green-200">🌱 เก็บเกี่ยว</span>';
+
+            title.innerHTML = `รวมล้าง ${selectedSortedLots.size} Lot ${sourceBadge}`;
             overlay.classList.remove('hidden');
 
             const now = new Date();
@@ -8774,6 +8785,114 @@
         }
 
         // --- QR CODE MODAL RENDER ---
+        function renderQRViewInModal(lotId) {
+            const content = document.getElementById('delivery-form-content');
+            const btn = document.getElementById('delivery-form-submit-btn');
+            const title = document.getElementById('delivery-form-title');
+
+            title.textContent = `QR Code - ${lotId}`;
+            content.innerHTML = '<div class="text-center p-10"><div class="animate-spin text-green-600 font-bold text-2xl">↻ กำลังโหลดข้อมูล...</div></div>';
+            btn.classList.add('hidden');
+
+            const token = sessionStorage.getItem('sessionToken');
+            google.script.run
+                .withSuccessHandler(res => {
+                    if (res.success && res.data && res.data.sub_lots && res.data.sub_lots.length > 0) {
+                        content.innerHTML = renderMultiQRModal(lotId, res.data.sub_lots);
+                    } else {
+                        content.innerHTML = renderQRCodeModal(lotId);
+                    }
+                })
+                .withFailureHandler(e => content.innerHTML = '<div class="text-red-500 text-center">เกิดข้อผิดพลาด: ' + e + '</div>')
+                .getLotData(lotId, token);
+        }
+
+        function renderMultiQRModal(lotId, subLots) {
+            const packetQRs = subLots.map(packet => {
+                // Trace URL with Packet ID
+                const traceUrl = `${BACKEND_URL}?view=trace&lotId=${lotId}&packetId=${packet.packet_number}`;
+                const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(traceUrl)}`;
+                return { ...packet, traceUrl, qrApiUrl };
+            });
+
+            // Escape JSON for onclick
+            const packetsJson = JSON.stringify(packetQRs).replace(/"/g, '&quot;');
+
+            let html = `
+                <div class="text-center mb-4">
+                     <button onclick="printMultiQRCode(${packetsJson})" class="px-6 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-900 shadow font-bold flex items-center justify-center gap-2 mx-auto">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                        พิมพ์ทั้งหมด (${subLots.length} ดวง)
+                     </button>
+                     <p class="text-xs text-gray-400 mt-2">คลิกเพื่อพิมพ์สติ๊กเกอร์สำหรับทุกกล่องในครั้งเดียว</p>
+                </div>
+                <div class="grid grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto p-2">
+             `;
+
+            packetQRs.forEach(p => {
+                html += `
+                    <div class="bg-white p-3 rounded-lg border border-gray-200 shadow-sm flex flex-col items-center">
+                        <h5 class="font-bold text-gray-800 mb-1">Packet ${p.packet_number}/${p.total_packets}</h5>
+                        <img src="${p.qrApiUrl}" class="w-24 h-24 mb-2">
+                        <div class="text-xs text-gray-400 font-mono">${p.id}</div>
+                        <div class="text-xs text-cyan-600 font-bold">${p.weight} kg</div>
+                    </div>
+                 `;
+            });
+            html += '</div>';
+            return html;
+        }
+
+        function printMultiQRCode(packets) {
+            const win = window.open('', '', 'height=600,width=800');
+            win.document.write('<html><head><title>Print Labels</title>');
+            win.document.write(`
+                <style>
+                    body { font-family: 'Sarabun', sans-serif; padding: 20px; }
+                    .label-container { 
+                        display: grid; 
+                        grid-template-columns: repeat(2, 1fr); 
+                        gap: 20px; 
+                        page-break-after: always;
+                    }
+                    .label { 
+                        border: 2px solid #000; 
+                        padding: 15px; 
+                        border-radius: 8px; 
+                        text-align: center; 
+                        height: 300px;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                    }
+                    h1 { font-size: 18px; margin: 5px 0; font-weight: bold; }
+                    h2 { font-size: 14px; margin: 0; color: #555; }
+                    .meta { font-size: 12px; margin-top: 5px; }
+                    @media print {
+                        .label-container { page-break-inside: auto; }
+                        .label { page-break-inside: avoid; }
+                    }
+                </style>
+            `);
+            win.document.write('</head><body><div class="label-container">');
+
+            packets.forEach(p => {
+                win.document.write(`
+                    <div class="label">
+                        <h2 style="font-weight:bold; font-size:16px;">BTH Traceability</h2>
+                        <img src="${p.qrApiUrl}" width="150" height="150" style="margin: 10px 0;">
+                        <h1>${p.id}</h1>
+                        <h2>Packet ${p.packet_number} / ${p.total_packets}</h2>
+                        <div class="meta">Weight: ${p.weight} kg</div>
+                    </div>
+                `);
+            });
+
+            win.document.write('</div><script>window.onload = function(){ window.print(); window.close(); }<\/script></body></html>');
+            win.document.close();
+        }
+
         function renderQRCodeModal(lotId) {
             // Generate Traceability URL
             // Assuming Web App URL is global BACKEND_URL, but we need the script url for doGet view

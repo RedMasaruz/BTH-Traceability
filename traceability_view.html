@@ -126,6 +126,29 @@
             </span>
         </div>
 
+        <? 
+        if (packetId && lot.data && lot.data.sub_lots) { 
+           var packet = lot.data.sub_lots.find(function(p) { return String(p.packet_number) === String(packetId); });
+           if (packet) {
+        ?>
+        <div
+            style="background:#eff6ff; padding:16px; border-radius:12px; margin-bottom:20px; border:1px solid #bfdbfe; text-align:center;">
+            <div style="color:#1e40af; font-size:12px; font-weight:bold; text-transform:uppercase;">Package Identity
+            </div>
+            <h2 style="margin:4px 0; color:#1e3a8a; font-size:24px;">📦 Item
+                <?= packet.packet_number ?> <span style="font-size:16px; color:#60a5fa;">/
+                    <?= packet.total_packets ?>
+                </span>
+            </h2>
+            <div style="font-size:16px; font-weight:bold; color:#2563eb;">Weight:
+                <?= packet.weight ?> kg
+            </div>
+        </div>
+        <? 
+           } 
+        } 
+        ?>
+
         <div class="grid">
             <div>
                 <div class="label">Lot ID</div>

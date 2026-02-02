@@ -191,6 +191,7 @@ function doGet(e) {
     // Render simple HTML view
     const template = HtmlService.createTemplateFromFile('traceability_view');
     template.lot = lotData;
+    template.packetId = params.packetId || ''; // Pass packetId to view
     return template.evaluate()
       .setTitle('BTH Traceability: ' + lotId)
       .addMetaTag('viewport', 'width=device-width, initial-scale=1')
@@ -2228,13 +2229,47 @@ function calculateGACPStatusServer(checkData) {
 function getLotsSheet() {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID_A);
   let sheet = ss.getSheetByName(SHEET_LOTS_NAME);
+  
+  // Expanded Headers Definition
+  const standardHeaders = [
+    "lot_id", "state", "agent_id", "farmer_id", "created_at", "updated_at",
+    "data_json", "history_json", "risk_score", "risk_flags", "is_active",
+    // New Process Columns
+    "harvest_date", "harvest_details",
+    "receive_date", "receive_details",
+    "sorting_date", "sorting_details",
+    "cleaning_date", "cleaning_details",
+    "drying_date", "drying_details",
+    "grinding_date", "grinding_details",
+    "packing_date", "packing_details",
+    "shipping_date", "shipping_details"
+  ];
+
   if (!sheet) {
     sheet = ss.insertSheet(SHEET_LOTS_NAME);
-    const headers = [
-      "lot_id", "state", "agent_id", "farmer_id", "created_at", "updated_at",
-      "data_json", "history_json", "risk_score", "risk_flags", "is_active"
-    ];
-    sheet.getRange(1, 1, 1, headers.length).setValues([headers]).setFontWeight('bold').setBackground('#ffe0b2');
+    sheet.getRange(1, 1, 1, standardHeaders.length).setValues([standardHeaders])
+         .setFontWeight('bold')
+         .setBackground('#ffe0b2');
+  } else {
+    // Migration Logic: Check and Append Missing Columns
+    const lastCol = sheet.getLastColumn();
+    if (lastCol > 0) {
+      const currentHeaders = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(h => String(h));
+      const missingHeaders = [];
+      
+      standardHeaders.forEach(h => {
+        if (!currentHeaders.includes(h)) {
+          missingHeaders.push(h);
+        }
+      });
+      
+      if (missingHeaders.length > 0) {
+        sheet.getRange(1, lastCol + 1, 1, missingHeaders.length)
+             .setValues([missingHeaders])
+             .setFontWeight('bold')
+             .setBackground('#e0f7fa'); // Light cyan for new cols
+      }
+    }
   }
   return sheet;
 }
@@ -2267,19 +2302,39 @@ function createLot(data, sessionToken) {
     // Extended fields support (No schema change, just ensuring JSON stringify captures everything)
     // data should contain: farmer_id, farmer_name, province, district, species, time_slot, container_size, etc.
     
-    const row = [
-      lotId, 
-      initialState, 
-      data.agent_id || session.username, 
-      data.farmer_id || '', 
-      now, 
-      now, 
-      JSON.stringify(initialData), 
-      JSON.stringify(initialData.timeline), 
-      0, 
-      "[]", 
-      true
-    ];
+    // Dynamic Row Construction based on Headers
+    const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    const row = new Array(headers.length).fill("");
+    
+    // Fill Standard Columns
+    const setCol = (name, val) => {
+      const idx = headers.indexOf(name);
+      if (idx > -1) row[idx] = val;
+    };
+    
+    setCol("lot_id", lotId);
+    setCol("state", initialState);
+    setCol("agent_id", data.agent_id || session.username);
+    setCol("farmer_id", data.farmer_id || '');
+    setCol("created_at", now);
+    setCol("updated_at", now);
+    setCol("data_json", JSON.stringify(initialData));
+    setCol("history_json", JSON.stringify(initialData.timeline));
+    setCol("risk_score", 0);
+    setCol("risk_flags", "[]");
+    setCol("is_active", true);
+    
+    // Fill Process Columns based on Initial State
+    const detailsJson = JSON.stringify(initialData);
+    if (initialState === 'PENDING') { // Start Harvest
+        setCol("harvest_date", now);
+        setCol("harvest_details", detailsJson);
+    } else if (initialState === 'RECEIVED') { // Receive Goods
+        setCol("receive_date", now);
+        setCol("receive_details", detailsJson);
+    } 
+    // If created as HARVESTED immediately? (Usually goes through Pending -> Update)
+    // But if manual create, maybe? Keep simple: PENDING=HarvestStart, RECEIVED=BuyStart.
     
     sheet.appendRow(row);
     
@@ -2357,12 +2412,53 @@ function updateLotState(lotId, newState, data, sessionToken) {
        }
     }
 
+    // Special handling for PACKED State: Generate Sub-Lot/Packet IDs
+    if (newState === 'PACKED' && data.packing_unit_count) {
+       const packetCount = parseInt(data.packing_unit_count) || 1;
+       const subLots = [];
+       for (let i = 1; i <= packetCount; i++) {
+         const suffix = String(i).padStart(2, '0');
+         subLots.push({
+           id: `${lotId}-${suffix}`,
+           packet_number: i,
+           total_packets: packetCount,
+           state: 'PACKED',
+           weight: data.packing_qty_per_unit || (data.packing_total_weight / packetCount).toFixed(2)
+         });
+       }
+       updatedData.sub_lots = subLots;
+    }
+
     // Special handling for SHIPPED state
     if (newState === 'SHIPPED') {
-      // Could add specific shipping logic here (e.g., deduct form global inventory if it existed)
-      // For now, just ensuring shipping details are saved in updatedData (which they are)
+       // Update all sub-lots to SHIPPED
+       if (updatedData.sub_lots && Array.isArray(updatedData.sub_lots)) {
+          updatedData.sub_lots = updatedData.sub_lots.map(packet => ({
+             ...packet,
+             state: 'SHIPPED',
+             shipping_info: {
+                tracking_number: data.shipping_tracking,
+                customer: data.shipping_customer,
+                shipped_at: now.getTime()
+             }
+          }));
+       }
     }
     
+    // Map State to Columns
+    let targetDateCol = "";
+    let targetDetailsCol = "";
+    
+    switch (newState) {
+        case 'HARVESTED': targetDateCol = "harvest_date"; targetDetailsCol = "harvest_details"; break;
+        case 'SORTED':    targetDateCol = "sorting_date"; targetDetailsCol = "sorting_details"; break;
+        case 'CLEANED':   targetDateCol = "cleaning_date"; targetDetailsCol = "cleaning_details"; break;
+        case 'DRIED':     targetDateCol = "drying_date";   targetDetailsCol = "drying_details"; break;
+        case 'GROUND':    targetDateCol = "grinding_date"; targetDetailsCol = "grinding_details"; break;
+        case 'PACKED':    targetDateCol = "packing_date";  targetDetailsCol = "packing_details"; break;
+        case 'SHIPPED':   targetDateCol = "shipping_date"; targetDetailsCol = "shipping_details"; break;
+    }
+
     // Update Row
     sheet.getRange(rowIndex, idxState + 1).setValue(newState);
     sheet.getRange(rowIndex, idxData + 1).setValue(JSON.stringify(updatedData));
@@ -2371,6 +2467,14 @@ function updateLotState(lotId, newState, data, sessionToken) {
     sheet.getRange(rowIndex, idxUpdated + 1).setValue(now);
     sheet.getRange(rowIndex, idxRiskScore + 1).setValue(riskScore);
     sheet.getRange(rowIndex, idxRiskFlags + 1).setValue(JSON.stringify(riskFlags));
+    
+    // Update Specific Process Columns
+    if (targetDateCol && targetDetailsCol) {
+       const idxDate = headers.indexOf(targetDateCol);
+       const idxDetails = headers.indexOf(targetDetailsCol);
+       if (idxDate > -1) sheet.getRange(rowIndex, idxDate + 1).setValue(now);
+       if (idxDetails > -1) sheet.getRange(rowIndex, idxDetails + 1).setValue(JSON.stringify(data));
+    }
     
     return { success: true, state: newState, lot_id: lotId };
     
@@ -2479,12 +2583,33 @@ function updateMultipleLotState(data, sessionToken) {
       timeline: [{ state: 'CLEANED', timestamp: now.getTime(), user: session.username, action: 'combined_cleaning', source_lots: lotIds }]
     };
     
-    const newRow = [
-      combinedLotId, 'CLEANED', agentId || session.username, farmerIds.join(','),
-      now, now, JSON.stringify(combinedData), JSON.stringify(combinedData.timeline), 0, "[]", true
-    ];
+    // Dynamic Row Construction
+    // Note: headers variable is already defined earlier from getDataRange()
+    const row = new Array(headers.length).fill("");
     
-    sheet.appendRow(newRow);
+    // Fill Standard Columns
+    const setCol = (name, val) => {
+      const idx = headers.indexOf(name);
+      if (idx > -1) row[idx] = val;
+    };
+    
+    setCol("lot_id", combinedLotId);
+    setCol("state", 'CLEANED');
+    setCol("agent_id", agentId || session.username);
+    setCol("farmer_id", farmerIds.join(','));
+    setCol("created_at", now);
+    setCol("updated_at", now);
+    setCol("data_json", JSON.stringify(combinedData));
+    setCol("history_json", JSON.stringify(combinedData.timeline));
+    setCol("risk_score", 0);
+    setCol("risk_flags", "[]");
+    setCol("is_active", true);
+    
+    // Fill Cleaning Columns
+    setCol("cleaning_date", now);
+    setCol("cleaning_details", JSON.stringify(combinedData));
+    
+    sheet.appendRow(row);
     
     return { 
       success: true, 
