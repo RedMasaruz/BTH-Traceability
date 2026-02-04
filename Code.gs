@@ -1575,8 +1575,34 @@ function generatePreviewPdf(data) {
 }
 
 /* ========== SURVEY: submitForm (complete) ========== */
-function submitForm(data) {
+function submitForm(data, token) {
+  // 1. Security Check: Validate Session Token
+  const session = validateSessionToken(token);
+  if (!session) {
+    console.error('Unauthorized access attempt to submitForm');
+    throw new Error('Unauthorized: Please login again');
+  }
+
+  var lock = LockService.getScriptLock();
   try {
+    lock.waitLock(30000); // 30 second timeout
+  } catch (e) {
+    throw new Error('Server is busy, please try again.');
+  }
+
+  try {
+    // 2. Sanitize inputs (Formula Injection Prevention)
+    if (data) {
+      Object.keys(data).forEach(key => {
+        if (typeof data[key] === 'string') {
+          // If starts with =, +, -, @, prepend '
+          if (/^[\=\+\-\@]/.test(data[key])) {
+            data[key] = "'" + data[key];
+          }
+        }
+      });
+    }
+
     const safe = (v) => (v !== undefined && v !== null) ? v : "";
 
     // --- (ต้นทางของฟังก์ชันไม่เปลี่ยน) ---
@@ -1742,6 +1768,8 @@ function submitForm(data) {
   } catch (error) {
     console.error('submitForm error:', error);
     throw new Error("เกิดข้อผิดพลาดในการบันทึกแบบฟอร์ม: " + error.message);
+  } finally {
+    lock.releaseLock();
   }
 }
 

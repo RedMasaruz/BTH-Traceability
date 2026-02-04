@@ -19,9 +19,9 @@
   "author": "บริษัท บ้านไทยเฮิร์บเซ็นเตอร์ จำกัด",
   "private": true,
   "dependencies": {
+    "@google/clasp": "^3.2.0",
     "sharp": "^0.34.5"
   },
-  "devDependencies": {},
   "repository": {
     "type": "git",
     "url": "https://github.com/RedMasaruz/BTH"
