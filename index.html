@@ -8379,6 +8379,8 @@
             const token = sessionStorage.getItem('sessionToken');
             const longName = longSelect ? longSelect.value : '';
 
+            console.log('📋 loadFarmersForUsageForm called with:', { longName, token: token ? 'present' : 'missing' });
+
             if (!longName) {
                 if (farmerSelect) {
                     farmerSelect.innerHTML = '<option value="" disabled selected>--- กรุณาเลือกตัวแทนก่อน ---</option>';
@@ -8392,20 +8394,35 @@
 
             google.script.run
                 .withSuccessHandler(result => {
+                    console.log('📋 loadFarmersForUsageForm raw result:', result);
+
                     let data;
                     try {
                         data = typeof result === 'string' ? JSON.parse(result) : result;
                     } catch (e) {
+                        console.error('📋 JSON parse error:', e);
                         data = result;
                     }
+
+                    console.log('📋 Parsed data:', data);
+                    console.log('📋 data.success:', data?.success);
+                    console.log('📋 data.message:', data?.message);
+                    console.log('📋 data.data:', data?.data);
+                    console.log('📋 Is array:', Array.isArray(data?.data));
+                    console.log('📋 Length:', data?.data?.length);
 
                     if (farmerSelect) {
                         farmerSelect.innerHTML = '<option value="" disabled selected>--- เลือกเกษตรกร ---</option>';
 
                         if (data && data.success && Array.isArray(data.data) && data.data.length > 0) {
+                            console.log('📋 First farmer record:', data.data[0]);
+                            console.log('📋 Available keys:', Object.keys(data.data[0]));
+
                             data.data.forEach(f => {
                                 const farmerId = f['รหัสเกษตรกร'] || f['a-id'] || '';
                                 const farmerName = f['ชื่อ-นามสกุล'] || f['a-fullname'] || farmerId;
+
+                                console.log('📋 Farmer:', { farmerId, farmerName });
 
                                 if (farmerId) {
                                     const opt = document.createElement('option');
@@ -8424,6 +8441,9 @@
                                 }
                             };
                         } else {
+                            console.warn('📋 No farmers found or invalid data structure');
+                            console.warn('📋 data.success:', data?.success);
+                            console.warn('📋 data.message:', data?.message);
                             farmerSelect.innerHTML = '<option value="">ไม่พบเกษตรกรที่ลงทะเบียน</option>';
                         }
                     }
@@ -8434,7 +8454,7 @@
                         farmerSelect.innerHTML = '<option value="">โหลดล้มเหลว</option>';
                     }
                 })
-                .getAllFarmersByLong(longName, token);
+                .getAllFarmersByLongPublic(longName);
         }
 
         function populateFarmersDropdownForDelivery(selectId) {

@@ -67,7 +67,8 @@ const ALLOWED_FUNCTIONS = [
   'writeSheetB', 
   'createNewSheetForLong',
   'searchFarmerData', 
-  'getAllFarmersByLong', 
+  'getAllFarmersByLong',
+  'getAllFarmersByLongPublic', 
   'searchSheetBData', 
   'submitForm',
   'getAllFarmers', 
@@ -87,6 +88,7 @@ const ALLOWED_FUNCTIONS = [
   'updateMultipleLotState',
   'getLongOptions'
 ];
+
 
 // Survey-specific resources (Slides template, destination sheet & folder for PDFs)
 const SURVEY_SPREADSHEET_ID = "1sK1KfRUhxfLxvgvdhG5OkjuGLXe55_pBC7MDyFMI03Q";
@@ -1239,6 +1241,67 @@ function getAllFarmersByLong(longName, sessionToken) {
     return { success: true, message: `พบ ${farmers.length} รายการ`, data: farmers };
   } catch (error) {
     console.error('getAllFarmersByLong error:', error);
+    return { success: false, message: "เกิดข้อผิดพลาด: " + error.message, data: [] };
+  }
+}
+
+/**
+ * Public version of getAllFarmersByLong - does NOT require authentication
+ * Used for farmer dropdown in usage form (Sheet B Use)
+ * Returns only essential fields: farmer ID and name
+ */
+function getAllFarmersByLongPublic(longName) {
+  try {
+    if (!longName) {
+      return { success: false, message: "กรุณาเลือกตัวแทน", data: [] };
+    }
+
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID_A);
+    const sheet = ss.getSheetByName(SHEET_A_NAME);
+    if (!sheet || sheet.getLastRow() <= 1) return { success: true, message: "ไม่พบข้อมูลเกษตรกร", data: [] };
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0];
+    
+    // Log headers for debugging
+    Logger.log('getAllFarmersByLongPublic headers: ' + JSON.stringify(headers));
+    
+    // Flexible header matching - check multiple possible column names
+    let longIndex = headers.indexOf('ตัวแทนที่สังกัด');
+    if (longIndex === -1) longIndex = headers.indexOf('a-long-affiliation');
+    if (longIndex === -1) longIndex = headers.indexOf('ล้งที่สังกัด');
+    if (longIndex === -1) longIndex = headers.indexOf('ตัวแทน');
+    if (longIndex === -1) longIndex = headers.indexOf('ล้ง');
+    if (longIndex === -1) longIndex = headers.indexOf('Long');
+    if (longIndex === -1) longIndex = headers.indexOf('long_name');
+    
+    // Try findHeaderIndexFlexible as last resort
+    if (longIndex === -1) {
+      longIndex = findHeaderIndexFlexible(sheet, ['ตัวแทนที่สังกัด', 'a-long-affiliation', 'ล้งที่สังกัด', 'ตัวแทน', 'ล้ง']);
+    }
+    
+    if (longIndex === -1) {
+      Logger.log('getAllFarmersByLongPublic: Could not find long column. Available headers: ' + JSON.stringify(headers));
+      return { success: false, message: "ไม่พบคอลัมน์ ตัวแทนที่สังกัด", data: [] };
+    }
+    
+    const requestLongNorm = normalizeLongName(longName || '');
+    const farmers = [];
+    
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      const rowLong = String(row[longIndex] || '').trim();
+      const rowLongNorm = normalizeLongName(rowLong);
+      
+      // Match both original and normalized values
+      if (rowLong === longName || rowLongNorm === requestLongNorm) {
+        const obj = {};
+        headers.forEach((h, idx) => obj[h] = row[idx]);
+        farmers.push(obj);
+      }
+    }
+    return { success: true, message: `พบ ${farmers.length} รายการ`, data: farmers };
+  } catch (error) {
+    console.error('getAllFarmersByLongPublic error:', error);
     return { success: false, message: "เกิดข้อผิดพลาด: " + error.message, data: [] };
   }
 }
