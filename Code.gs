@@ -217,6 +217,24 @@ function doGet(e) {
     }
   }
   
+  if (action === 'getAllFarmersByLongPublic') {
+    try {
+      const longName = params.longName;
+      const result = getAllFarmersByLongPublic(longName);
+      return ContentService
+        .createTextOutput(JSON.stringify(result))
+        .setMimeType(ContentService.MimeType.JSON);
+    } catch (error) {
+      return ContentService
+        .createTextOutput(JSON.stringify({
+          success: false,
+          message: "API Error: " + error.message,
+          data: []
+        }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+  
   // 2. Traceability View (QR Code Logic)
   // Usage: <SCRIPT_URL>?view=trace&lotId=LOT-XXXX
   if (view === 'trace') {
