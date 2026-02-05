@@ -233,7 +233,7 @@ function doGet(e) {
     if (!lotData) return ContentService.createTextOutput("Lot Not Found").setMimeType(ContentService.MimeType.TEXT);
     
     // Render simple HTML view
-    const template = HtmlService.createTemplateFromFile('traceability_view');
+    const template = HtmlService.createTemplateFromFile('frontend/traceability_view');
     template.lot = lotData;
     template.packageIndex = packageIndex;
     return template.evaluate()
@@ -243,7 +243,7 @@ function doGet(e) {
   }
   
   // Default: serve the web app HTML
-  return HtmlService.createHtmlOutputFromFile('index')
+  return HtmlService.createHtmlOutputFromFile('frontend/index')
     .setTitle('BTH Traceability')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
