@@ -4054,12 +4054,7 @@
             }
 
             try {
-                const response = await new Promise((resolve, reject) => {
-                    google.script.run
-                        .withSuccessHandler(resolve)
-                        .withFailureHandler(reject)
-                        .userLogin(username, password);
-                });
+                const response = await callBackendFunction('userLogin', username, password);
 
                 if (response && response.success) {
                     console.log('✅ Login successful:', response);
@@ -4230,22 +4225,20 @@
             }
 
             try {
-                const response = await new Promise((resolve, reject) => {
+                const response = await new Promise(async (resolve, reject) => {
                     // Set timeout for login request
                     const timeoutId = setTimeout(() => {
                         reject(new Error('การเชื่อมต่อหมดเวลา กรุณาลองอีกครั้ง'));
                     }, 30000); // 30 second timeout
 
-                    google.script.run
-                        .withSuccessHandler((result) => {
-                            clearTimeout(timeoutId);
-                            resolve(result);
-                        })
-                        .withFailureHandler((error) => {
-                            clearTimeout(timeoutId);
-                            reject(error);
-                        })
-                        .userLogin(username, password);
+                    try {
+                        const result = await callBackendFunction('userLogin', username, password);
+                        clearTimeout(timeoutId);
+                        resolve(result);
+                    } catch (error) {
+                        clearTimeout(timeoutId);
+                        reject(error);
+                    }
                 });
 
                 if (response && response.success) {
