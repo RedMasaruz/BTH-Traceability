@@ -2077,7 +2077,7 @@
                         <input id="admin-search-input" type="text" placeholder="ค้นหาตามรหัส หรือ ชื่อ" maxlength="100"
                             class="w-full p-2 border rounded" />
                         <button id="admin-search-btn" class="search-button px-4"
-                            onclick="adminFilterTable()">ค้นหา</button>
+                            onclick="debounce(adminFilterTable, 300)()">ค้นหา</button>
                         <button id="admin-export-btn" class="pastel-button px-4"
                             onclick="adminExportCurrentToCSV()">ดาวน์โหลด
                             CSV</button>
@@ -2216,6 +2216,45 @@
         // =============================================
         const isGitHubPages = window.location.hostname.includes('github.io');
         const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbx4LUd2DgWBOeiV2mKdaxxmlBlSuzKQTLP2-s-Pxq73bZpEeYM4A0kQINLn1MV_4AO9-g/exec';
+
+        // =============================================
+        // UTILITIES: DEBOUNCE & THROTTLE
+        // =============================================
+        function debounce(func, wait) {
+            let timeout;
+            return function (...args) {
+                const context = this;
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(context, args), wait);
+            };
+        }
+
+        // Prevent double submission helper
+        function withDoubleSubmitProtection(btnId, asyncFn) {
+            const btn = document.getElementById(btnId);
+            if (!btn) return;
+
+            if (btn.dataset.processing === 'true') {
+                console.log('Submission already in progress...');
+                return;
+            }
+
+            const originalText = btn.innerText;
+            btn.dataset.processing = 'true';
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> กำลังบันทึก...';
+            btn.classList.add('opacity-75', 'cursor-not-allowed');
+
+            asyncFn().finally(() => {
+                setTimeout(() => { // slight delay to prevent immediate re-click
+                    btn.dataset.processing = 'false';
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                    btn.classList.remove('opacity-75', 'cursor-not-allowed');
+                }, 500);
+            });
+        }
+
 
         // =============================================
         // CONSTANTS
@@ -5933,76 +5972,38 @@
                 });
             }
 
+
             if (submitBtn) {
+                // Use the double submit protection helper
                 submitBtn.addEventListener('click', () => {
-                    const submitBtnEl = document.getElementById('submitBtn');
-                    const originalText = submitBtnEl.innerHTML;
+                    withDoubleSubmitProtection('submitBtn', () => {
+                        return new Promise((resolve, reject) => {
+                            const token = sessionStorage.getItem('sessionToken');
+                            google.script.run
+                                .withSuccessHandler(msg => {
+                                    showMessageBox('✅ สำเร็จ', msg);
+                                    document.getElementById('kratomForm').reset();
 
-                    submitBtnEl.disabled = true;
-                    submitBtnEl.innerHTML = '<div class="loading-spinner"></div> กำลังส่ง...';
+                                    // Hide "other" inputs...
+                                    ['water_other_text', 'fert_other_text', 'past_other_text', 'agent-name', 'gap-date-range', 'gacp-date-range', 'special-name', 'substanceValueBox'].forEach(id => {
+                                        const el = document.getElementById(id);
+                                        if (el) el.classList.add('hidden');
+                                    });
+                                    // Clear textareas
+                                    const otherVar = document.getElementById('other_varieties');
+                                    if (otherVar) otherVar.value = '';
+                                    const hormoneAnd = document.getElementById('hormone_and_other');
+                                    if (hormoneAnd) hormoneAnd.value = '';
 
-                    const token = sessionStorage.getItem('sessionToken');
-                    google.script.run.withSuccessHandler(msg => {
-                        showMessageBox('✅ สำเร็จ', msg);
-                        document.getElementById('kratomForm').reset();
-
-                        // Hide "other" inputs, agent input and GAP/GACP ranges after reset
-                        ['water_other_text', 'fert_other_text', 'past_other_text', 'agent-name', 'gap-date-range', 'gacp-date-range', 'special-name', 'substanceValueBox'].forEach(id => {
-                            const el = document.getElementById(id);
-                            if (el) {
-                                el.classList.add('hidden');
-                            }
+                                    resolve();
+                                })
+                                .withFailureHandler(err => {
+                                    showMessageBox('❌ เกิดข้อผิดพลาด', err.message);
+                                    reject(err);
+                                })
+                                .processForm(document.getElementById('kratomForm'), token); // Assuming processForm is the backend function
                         });
-
-                        // clear other_varieties textarea and combined hormone/other
-                        const otherVar = document.getElementById('other_varieties');
-                        if (otherVar) otherVar.value = '';
-                        const hormoneAnd = document.getElementById('hormone_and_other');
-                        if (hormoneAnd) hormoneAnd.value = '';
-                        const volcanicCb = document.getElementById('mineral_volcanic');
-                        if (volcanicCb) volcanicCb.checked = false;
-
-                        // remove generated stem sections and reset total
-                        const scb = document.querySelectorAll('.stem-cb');
-                        scb.forEach(cb => cb.checked = false);
-                        const stCont = getStemContainer();
-                        if (stCont) stCont.innerHTML = '';
-                        const totalEl = document.getElementById('total_tree_count');
-                        if (totalEl) totalEl.value = '';
-
-                        // ensure substance checkboxes are reset
-                        const substanceCheckboxes = document.querySelectorAll('.substance-cb');
-                        substanceCheckboxes.forEach(cb => cb.checked = false);
-                        const subVal = document.getElementById('substance_value');
-                        if (subVal) subVal.value = '';
-
-                        // hide preview, show form (update both class and inline style)
-                        if (previewStep) {
-                            previewStep.classList.add('hidden');
-                            previewStep.style.display = 'none';
-                        }
-                        if (formStep) {
-                            formStep.classList.remove('hidden');
-                            formStep.style.display = '';
-                        }
-
-                        submitBtnEl.disabled = false;
-                        submitBtnEl.innerHTML = originalText;
-                    }).withFailureHandler(error => {
-                        let errorMessage = "เกิดข้อผิดพลาดในการส่งข้อมูล";
-                        if (error && error.message) {
-                            errorMessage += ": " + esc(error.message);
-                            if (error.message.includes('ScriptError: Exception: ไม่พบรายการตามตารางที่ระบุ') || error.message.includes('ScriptError: Exception: ไม่พบชีตตามชื่อ')) {
-                                errorMessage += "<br><br><b>นี่คือข้อผิดพลาดจาก Google Apps Script (GAS) Backend ของคุณ โปรดตรวจสอบ:</b>"
-                                    + "<br>1. ชื่อฟังก์ชัน GAS ที่รับข้อมูล (ต้องเป็น <code>submitForm</code>)"
-                                    + "<br>2. ชื่อ Google Sheet หรือชื่อชีต (Sheet Name) ที่อ้างอิงถึงในโค้ด GAS ว่าถูกต้องหรือไม่"
-                                    + "<br>3. สิทธิ์ในการเข้าถึง Google Sheet นั้น";
-                            }
-                        }
-                        showMessageBox('❌ ข้อผิดพลาด', errorMessage);
-                        submitBtnEl.disabled = false;
-                        submitBtnEl.innerHTML = originalText;
-                    }).submitForm(formDataObj, token);
+                    });
                 });
             }
         });
@@ -8153,89 +8154,100 @@
         }
 
         function submitDeliveryForm() {
-            const btn = document.getElementById('delivery-form-submit-btn');
-            const originalText = btn.innerText;
+            withDoubleSubmitProtection('delivery-form-submit-btn', () => {
+                return new Promise((resolve, reject) => {
+                    const btn = document.getElementById('delivery-form-submit-btn');
+                    // Original text is handled by wrapper
 
-            // Basic Frontend Validation
-            const form = document.querySelector('#delivery-form-content form');
-            if (!form) {
-                showCustomAlert('❌ ไม่พบฟอร์ม กรุณาลองใหม่อีกครั้ง', 'danger');
-                return;
-            }
-            if (!form.reportValidity()) return;
-
-            const formData = new FormData(form);
-            const data = Object.fromEntries(formData.entries());
-
-            const token = sessionStorage.getItem('sessionToken');
-
-            btn.disabled = true;
-            btn.innerText = "กำลังบันทึก...";
-
-            const isNew = !data.lot_id;
-
-            if (isNew) {
-                // Create Lot
-                // If "Receive Goods" mode (Case 2), set initial state to HARVESTED (Ready to Sort)
-                if (data.form_mode === 'receive_goods') {
-                    data.initial_state = 'RECEIVED';
-                    data.lot_source = 'receive';
-                } else {
-                    data.initial_state = 'PENDING'; // Start Harvest
-                    data.lot_source = 'harvest';
-                }
-
-                google.script.run
-                    .withSuccessHandler(res => {
-                        btn.disabled = false;
-                        btn.innerText = originalText;
-                        if (res.success) {
-                            closeDeliveryForm();
-                            loadActiveLots();
-                            showCustomAlert(`✅ เปิด Lot สำเร็จ: ${res.lot_id}`, 'success');
-                        } else {
-                            showCustomAlert(`❌ เกิดข้อผิดพลาด: ${res.message}`, 'danger');
-                        }
-                    })
-                    .withFailureHandler(err => {
-                        btn.disabled = false;
-                        btn.innerText = originalText;
-                        showCustomAlert(`❌ Server Error: ${err.message}`, 'danger');
-                    })
-                    .createLot(data, token);
-            } else {
-                // Update State Logic
-                let nextState = data.current_state || 'PENDING'; // Default fallback
-
-                // Logic based on process_step
-                if (data.process_step === 'end_harvest') nextState = 'HARVESTED';
-                else if (data.process_step === 'sorting') {
-                    nextState = 'SORTED';
-                    // Self-healing: If transition from RECEIVED, ensure lot_source is set
-                    if (data.current_state === 'RECEIVED') {
-                        data.lot_source = 'receive';
+                    // Basic Frontend Validation
+                    const form = document.querySelector('#delivery-form-content form');
+                    if (!form) {
+                        showCustomAlert('❌ ไม่พบฟอร์ม กรุณาลองใหม่อีกครั้ง', 'danger');
+                        resolve();
+                        return;
                     }
-                }
-                else if (data.process_step === 'cleaning') nextState = 'CLEANED';
-                else if (data.process_step === 'drying') nextState = 'DRIED';
-                else if (data.process_step === 'grinding') nextState = 'GROUND';
-                else if (data.process_step === 'packing') nextState = 'PACKED';
-                else if (data.process_step === 'shipping') nextState = 'SHIPPED';
+                    if (!form.reportValidity()) {
+                        resolve();
+                        return;
+                    }
 
-                google.script.run
-                    .withSuccessHandler(res => {
-                        btn.disabled = false;
-                        btn.innerText = originalText;
-                        if (res.success) {
-                            closeDeliveryForm();
-                            loadActiveLots();
-                            showCustomAlert(`✅ บันทึกขั้นตอนสำเร็จ`, 'success');
+                    const formData = new FormData(form);
+                    const data = Object.fromEntries(formData.entries());
+
+                    const token = sessionStorage.getItem('sessionToken');
+
+                    // Button disabling handled by wrapper
+
+                    const isNew = !data.lot_id;
+                    const originalText = btn.innerText;
+
+                    if (isNew) {
+                        // Create Lot
+                        // If "Receive Goods" mode (Case 2), set initial state to HARVESTED (Ready to Sort)
+                        if (data.form_mode === 'receive_goods') {
+                            data.initial_state = 'RECEIVED';
+                            data.lot_source = 'receive';
                         } else {
-                            showCustomAlert(`❌ เกิดข้อผิดพลาด: ${res.message}`, 'danger');
+                            data.initial_state = 'PENDING'; // Start Harvest
+                            data.lot_source = 'harvest';
                         }
-                    })
-                    .updateLotState(data.lot_id, nextState, data, token);
-            }
+
+                        google.script.run
+                            .withSuccessHandler(res => {
+                                // Wrapper handles re-enabling
+                                if (res.success) {
+                                    closeDeliveryForm();
+                                    loadActiveLots();
+                                    showCustomAlert(`✅ เปิด Lot สำเร็จ: ${res.lot_id}`, 'success');
+                                } else {
+                                    showCustomAlert(`❌ เกิดข้อผิดพลาด: ${res.message}`, 'danger');
+                                }
+                                resolve();
+                            })
+                            .withFailureHandler(err => {
+                                showCustomAlert(`❌ Server Error: ${err.message}`, 'danger');
+                                resolve();
+                            })
+                            .createLot(data, token);
+                    } else {
+                        // Update State Logic
+                        let nextState = data.current_state || 'PENDING'; // Default fallback
+
+                        // Logic based on process_step
+                        if (data.process_step === 'end_harvest') nextState = 'HARVESTED';
+                        else if (data.process_step === 'sorting') {
+                            nextState = 'SORTED';
+                            // Self-healing: If transition from RECEIVED, ensure lot_source is set
+                            if (data.current_state === 'RECEIVED') {
+                                data.lot_source = 'receive';
+                            }
+                        }
+                        else if (data.process_step === 'cleaning') nextState = 'CLEANED';
+                        else if (data.process_step === 'drying') nextState = 'DRIED';
+                        else if (data.process_step === 'grinding') nextState = 'GROUND';
+                        else if (data.process_step === 'packing') nextState = 'PACKED';
+                        else if (data.process_step === 'shipping') nextState = 'SHIPPED';
+
+                        google.script.run
+                            .withSuccessHandler(res => {
+                                // Wrapper handles re-enabling
+                                if (res.success) {
+                                    closeDeliveryForm();
+                                    loadActiveLots();
+                                    showCustomAlert(`✅ บันทึกขั้นตอนสำเร็จ`, 'success');
+                                } else {
+                                    showCustomAlert(`❌ เกิดข้อผิดพลาด: ${res.message}`, 'danger');
+                                }
+                                resolve();
+                            })
+                            .withFailureHandler(err => {
+                                showCustomAlert(`❌ Server Error: ${err.message}`, 'danger');
+                                resolve();
+                            })
+                            .updateLotState(data.lot_id, nextState, data, token);
+                    }
+                });
+            });
         }
 
         // =============================================
