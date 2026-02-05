@@ -6,11 +6,12 @@
 !appsscript.json
 
 # Ignore specific files that might slip through if patterns incorrectly used
-index.html
-traceability_view.html
-sw.js
-style.css
-*.md
+# Allow new directories
+!frontend/
+!frontend/**/*
+!public/
+!public/**/*
+
+# Ignore git and node_modules
 .git/
 node_modules/
-icons/
