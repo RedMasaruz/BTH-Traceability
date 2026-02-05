@@ -2215,7 +2215,7 @@
         // CONSTANTS & CONFIGURATION
         // =============================================
         const isGitHubPages = window.location.hostname.includes('github.io');
-        const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbwjO3u0zJ4ofASR3iNV-od_LzXzpJZeZJ8qPO99OIts5aZOUwc5JtIiUsUufP89Cnqt/exec';
+        const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbyf2nx-RM6p_5x93mcbOQBvB6OydL0NX2rLHC4QX2f1v_OJBbZryCNtvZPkY8VO1Nx3/exec';
 
         // =============================================
         // CONSTANTS
@@ -2428,8 +2428,8 @@
 
             messageTitle.textContent = title;
             messageContent.style.whiteSpace = 'pre-line';
-            // Allow HTML in content (we assume inputs are trusted in this internal app).
-            messageContent.innerHTML = content;
+            // Security Fix: Use textContent to prevent XSS
+            messageContent.textContent = content;
 
             messageBox.classList.remove('hidden');
         }
@@ -5079,7 +5079,7 @@
                                 return {
                                     withFailureHandler: function (failureCb) {
                                         return {
-                                            submitForm: function (data) {
+                                            submitForm: function (data, token) {
                                                 console.log("Mock submitForm data:", data);
                                                 setTimeout(() => successCb("Mock submission successful!"), 800);
                                             }
@@ -5097,7 +5097,7 @@
                             return {
                                 withFailureHandler: function (failureCb) {
                                     return {
-                                        submitForm: function (data) {
+                                        submitForm: function (data, token) {
                                             console.log("Mock submitForm data:", data);
                                             setTimeout(() => successCb("Mock submission successful!"), 800);
                                         }
@@ -5941,6 +5941,7 @@
                     submitBtnEl.disabled = true;
                     submitBtnEl.innerHTML = '<div class="loading-spinner"></div> กำลังส่ง...';
 
+                    const token = sessionStorage.getItem('sessionToken');
                     google.script.run.withSuccessHandler(msg => {
                         showMessageBox('✅ สำเร็จ', msg);
                         document.getElementById('kratomForm').reset();
@@ -6001,7 +6002,7 @@
                         showMessageBox('❌ ข้อผิดพลาด', errorMessage);
                         submitBtnEl.disabled = false;
                         submitBtnEl.innerHTML = originalText;
-                    }).submitForm(formDataObj);
+                    }).submitForm(formDataObj, token);
                 });
             }
         });
