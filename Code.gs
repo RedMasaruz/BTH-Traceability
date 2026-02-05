@@ -38,26 +38,26 @@ const USER_ADMIN_SHEET_NAME = "UserAdmin";
 const SHEET_LOTS_NAME = "ProductionLots";
 
 const SHEET_B_NAMES = [
-  "ตัวแทนบาสBDS",
-  "ตัวแทนHunterเวียงแก่น",
-  "ตัวแทนก้ามท่าแค",
-  "ตัวแทนกระรอก",
-  "ตัวแทนรัชช์เมืองนคร",
-  "ตัวแทนตูนบางขัน",
-  "ตัวแทนป๋องส์เมืองพัทลุง",
-  "ตัวแทนบจก.จินดารัตน์ โปรดักส์",
-  "ตัวแทนดอน",
-  "ตัวแทนเตยเกรซ",
-  "ตัวแทนสมพงศ์พะยูนตรัง",
-  "ตัวแทนกระท่อมปลอดสารคลองใหม่พัทลุง",
-  "ตัวแทนหรั่งนุ้ยพระนคร",
-  "ตัวแทนเปรี้ยวหล่มสัก",
-  "ตัวแทนพี.เจ.กระท่อมทอง",
-  "ตัวแทนทรัพย์มะรุมฟาร์ม",
-  "ตัวแทนสวนอิน-จักรภัทร",
-  "ตัวแทนรักษ์อุทัย",
-  "ตัวแทนวิทย์วิสาหกิจชุมชนชาววัง",
-  "ตัวแทนสาโรจน์"
+  "บาสBDS",
+  "Hunterเวียงแก่น",
+  "ก้ามท่าแค",
+  "กระรอก",
+  "รัชช์เมืองนคร",
+  "ตูนบางขัน",
+  "ป๋องส์เมืองพัทลุง",
+  "บจก.จินดารัตน์ โปรดักส์",
+  "ดอน",
+  "เตยเกรซ",
+  "สมพงศ์พะยูนตรัง",
+  "กระท่อมปลอดสารคลองใหม่พัทลุง",
+  "หรั่งนุ้ยพระนคร",
+  "เปรี้ยวหล่มสัก",
+  "พี.เจ.กระท่อมทอง",
+  "ทรัพย์มะรุมฟาร์ม",
+  "สวนอิน-จักรภัทร",
+  "รักษ์อุทัย",
+  "วิทย์วิสาหกิจชุมชนชาววัง",
+  "สาโรจน์"
 ];
 
 // FALLBACK_SECRET_KEY removed for security. Keys are now improved to be auto-generated in ScriptProperties if missing.
@@ -107,10 +107,9 @@ const SEARCH_DEBOUNCE_MS = 300;
 const MAX_SPECIES_COUNT = 1000000;
 const MAX_SPECIES_NAME_LENGTH = 100;
 
-/* ========== DYNAMIC DROPDOWN OPTIONS ========== */
 /**
  * Fetches agent options from AgentOptions sheet for dropdown population
- * Display text shows name without prefix, but value includes 'ตัวแทน' prefix for Sheet B reference
+ * Display text and value are the same - direct agent name without prefix
  * @returns {Object} {success, options: Array of {value, text}}
  */
 function getLongOptions() {
@@ -128,8 +127,7 @@ function getLongOptions() {
                 const agentName = data[i][0];
                 if (agentName && String(agentName).trim()) {
                     const displayName = String(agentName).trim();
-                    const valueWithPrefix = 'ตัวแทน' + displayName;
-                    options.push({ value: valueWithPrefix, text: displayName });
+                    options.push({ value: displayName, text: displayName });
                 }
             }
         }
@@ -149,9 +147,7 @@ function getLongOptions() {
                 // const role = userData[i][4]; // Optional filtering
                 if (longName && String(longName).trim()) {
                     const displayName = String(longName).trim();
-                    // Avoid duplicates if both sheets have same data (unlikely if options.length currently 1)
-                     const valueWithPrefix = 'ตัวแทน' + displayName;
-                     options.push({ value: valueWithPrefix, text: displayName });
+                    options.push({ value: displayName, text: displayName });
                 }
             }
         }
@@ -171,8 +167,7 @@ function getLongOptions() {
                        const possibleName = legData[i][1]; 
                        if (possibleName && typeof possibleName === 'string' && possibleName.length > 2) {
                             const displayName = possibleName.trim();
-                            const valueWithPrefix = 'ตัวแทน' + displayName;
-                            options.push({ value: valueWithPrefix, text: displayName });
+                            options.push({ value: displayName, text: displayName });
                        }
                   }
              }
@@ -905,11 +900,22 @@ function writeSheetA(formData, sessionToken) {
     const formLongNorm = normalizeLongName(formData['a-long-affiliation'] || '');
     let isAuthorized = (sessionLongNorm === formLongNorm);
 
+    // Partial match check: if one contains the other (e.g., "เลพเพเกรซ" vs "ตัวแทนเลพเพเกรซ")
+    if (!isAuthorized && sessionLongNorm && formLongNorm) {
+      if (formLongNorm.includes(sessionLongNorm) || sessionLongNorm.includes(formLongNorm)) {
+        isAuthorized = true;
+      }
+    }
+
     if (!isAuthorized && session.username) {
       const mappedLong = getLongNameFromUsers(session.username);
       if (mappedLong) {
         const mappedNorm = normalizeLongName(mappedLong);
         if (mappedNorm === formLongNorm) {
+          isAuthorized = true;
+          session.longName = mappedLong;
+        } else if (formLongNorm.includes(mappedNorm) || mappedNorm.includes(formLongNorm)) {
+          // Partial match with mapped long name
           isAuthorized = true;
           session.longName = mappedLong;
         } else if (normalizeLongName(session.username) === formLongNorm) {
