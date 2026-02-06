@@ -8396,7 +8396,8 @@
             const isGitHubPages = window.location.hostname.includes('github.io') || window.location.hostname.includes('localhost');
 
             // Use fetch API if on GitHub Pages or if google.script.run is not available
-            if (isGitHubPages && BACKEND_URL) {
+            // Force use of API for public endpoints
+            if (BACKEND_URL) {
                 console.log('📋 loadFarmersForUsageForm: using fetch with BACKEND_URL');
                 const apiUrl = `${BACKEND_URL}?action=getAllFarmersByLongPublic&longName=${encodeURIComponent(longName)}`;
 
