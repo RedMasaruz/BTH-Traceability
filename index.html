@@ -2533,14 +2533,13 @@
                 }
             }
 
-            // For sheet-b-use-view, optionally auto-select if user is logged in, but don't require it
+            // For sheet-b-use-view, optionally auto-select if user is logged in
             if (viewId === 'sheet-b-use-view') {
                 const currentUser = checkLoginStatus();
                 if (currentUser && currentUser.longName) {
                     console.log(`✅ User logged in as ${currentUser.longName}, auto-selecting dropdown`);
                     updateAllLongDropdowns(currentUser.longName);
                 }
-                // No error message if not logged in - this is allowed
             }
 
             updateBackButton(viewId);
@@ -2549,6 +2548,106 @@
             currentView = viewId;
 
             window.scrollTo(0, 0);
+        }
+
+        // --- DASHBOARD LOGIC (Global Scope) ---
+        let allDashboardFarmers = [];
+        let currentFilter = 'all'; // 'all', 'active', 'missing'
+
+        function loadAgentDashboard() {
+            const tableBody = document.getElementById('dash-table-body');
+            if (tableBody) {
+                tableBody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-stone-400"><div class="flex flex-col items-center justify-center"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mb-2"></div><p>กำลังโหลดข้อมูล...</p></div></td></tr>`;
+            }
+
+            const token = localStorage.getItem('session_token');
+            const user = JSON.parse(localStorage.getItem('user_session') || '{}');
+            const longName = user.longName || '';
+
+            google.script.run
+                .withSuccessHandler(response => {
+                    if (response.success) {
+                        document.getElementById('dash-total').textContent = response.data.stats.total;
+                        document.getElementById('dash-active').textContent = response.data.stats.active;
+                        document.getElementById('dash-missing').textContent = response.data.stats.missing;
+                        allDashboardFarmers = response.data.farmers;
+                        filterDashboardList('all');
+                    } else {
+                        Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: response.message });
+                    }
+                })
+                .withFailureHandler(err => {
+                    console.error(err);
+                    Swal.fire({ icon: 'error', title: 'Error', text: 'Connection failed' });
+                })
+                .getAgentDashboardData(longName, token);
+        }
+
+        function renderDashboardTable(list) {
+            const tbody = document.getElementById('dash-table-body');
+            const footer = document.getElementById('dash-footer');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            if (list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-stone-400">ไม่พบข้อมูล</td></tr>`;
+                footer.textContent = 'แสดงทั้งหมด 0 รายการ';
+                return;
+            }
+            list.forEach(f => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-stone-50 transition-colors border-b border-stone-100 last:border-0';
+                const statusIcon = f.status === 'active'
+                    ? `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"><i class="bi bi-check-circle-fill me-1"></i> ปกติ</span>`
+                    : `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800"><i class="bi bi-exclamation-triangle-fill me-1"></i> ขาดส่ง (${f.daysSince > 0 ? f.daysSince + ' วัน' : 'ไม่มีข้อมูล'})</span>`;
+                tr.innerHTML = `
+                    <td class="p-4">${statusIcon}</td>
+                    <td class="p-4 font-medium text-stone-700">${f.name}</td>
+                    <td class="p-4 text-stone-500 font-mono text-xs">${f.id}</td>
+                    <td class="p-4 text-stone-500 text-sm">${f.lastActivity}</td>
+                    <td class="p-4 text-center">
+                        <button onclick="viewFarmerHistoryFromDash('${f.id}', '${f.name}')" 
+                            class="text-blue-600 hover:text-blue-800 hover:bg-blue-50 p-2 rounded-full transition-colors" title="ดูประวัติ">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            footer.textContent = `แสดงทั้งหมด ${list.length} รายการ`;
+        }
+
+        function filterDashboardList(type) {
+            currentFilter = type;
+            const searchVal = (document.getElementById('dash-search').value || '').toLowerCase();
+            let filtered = allDashboardFarmers;
+            if (type !== 'all') {
+                filtered = filtered.filter(f => f.status === type);
+            }
+            if (searchVal) {
+                filtered = filtered.filter(f =>
+                    f.name.toLowerCase().includes(searchVal) ||
+                    String(f.id).toLowerCase().includes(searchVal)
+                );
+            }
+            renderDashboardTable(filtered);
+        }
+
+        function searchDashboardList() {
+            filterDashboardList(currentFilter);
+        }
+
+        function viewFarmerHistoryFromDash(id, name) {
+            Swal.fire({
+                icon: 'info',
+                title: 'ดูประวัติเกษตรกร',
+                html: `<strong>รหัส:</strong> ${id}<br><strong>ชื่อ:</strong> ${name}<br><br><small>ฟีเจอร์นี้กำลังพัฒนา</small>`,
+                confirmButtonText: 'ปิด'
+            });
+        }
+        // --- END DASHBOARD LOGIC ---
+
+        function showViewFromSheetA(viewId) {
+            updateSheetALongDropdown();
         }
 
         function goBack() {
@@ -5972,146 +6071,6 @@
                         // ensure substance checkboxes are reset
                         const substanceCheckboxes = document.querySelectorAll('.substance-cb');
                         substanceCheckboxes.forEach(cb => cb.checked = false);
-                        // --- DASHBOARD LOGIC ---
-                        let allDashboardFarmers = [];
-                        let currentFilter = 'all'; // 'all', 'active', 'missing'
-
-                        function loadAgentDashboard() {
-                            const tableBody = document.getElementById('dash-table-body');
-                            if (tableBody) {
-                                tableBody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-stone-400"><div class="flex flex-col items-center justify-center"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mb-2"></div><p>กำลังโหลดข้อมูล...</p></div></td></tr>`;
-                            }
-
-                            const token = localStorage.getItem('session_token');
-                            const user = JSON.parse(localStorage.getItem('user_session') || '{}');
-                            const longName = user.longName || '';
-
-                            google.script.run
-                                .withSuccessHandler(response => {
-                                    if (response.success) {
-                                        // Update Stats
-                                        document.getElementById('dash-total').textContent = response.data.stats.total;
-                                        document.getElementById('dash-active').textContent = response.data.stats.active;
-                                        document.getElementById('dash-missing').textContent = response.data.stats.missing;
-
-                                        // Store and Render List
-                                        allDashboardFarmers = response.data.farmers;
-                                        filterDashboardList('all'); // Show all by default
-                                    } else {
-                                        Swal.fire({
-                                            icon: 'error',
-                                            title: 'เกิดข้อผิดพลาด',
-                                            text: response.message
-                                        });
-                                    }
-                                })
-                                .withFailureHandler(err => {
-                                    console.error(err);
-                                    Swal.fire({ icon: 'error', title: 'Error', text: 'Connection failed' });
-                                })
-                                .getAgentDashboardData(longName, token);
-                        }
-
-                        function renderDashboardTable(list) {
-                            const tbody = document.getElementById('dash-table-body');
-                            const footer = document.getElementById('dash-footer');
-
-                            if (!tbody) return;
-                            tbody.innerHTML = '';
-
-                            if (list.length === 0) {
-                                tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-stone-400">ไม่พบข้อมูล</td></tr>`;
-                                footer.textContent = 'แสดงทั้งหมด 0 รายการ';
-                                return;
-                            }
-
-                            list.forEach(f => {
-                                const tr = document.createElement('tr');
-                                tr.className = 'hover:bg-stone-50 transition-colors border-b border-stone-100 last:border-0';
-
-                                // Status Icon
-                                const statusIcon = f.status === 'active'
-                                    ? `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"><i class="bi bi-check-circle-fill me-1"></i> ปกติ</span>`
-                                    : `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800"><i class="bi bi-exclamation-triangle-fill me-1"></i> ขาดส่ง (${f.daysSince > 0 ? f.daysSince + ' วัน' : 'ไม่มีข้อมูล'})</span>`;
-
-                                // Action Button
-                                // Uses existing logic: populate search box in Sheet C (if we kept it) OR just show history directly
-                                // Ideally, we should reuse a function to show history. 
-                                // For now, let's assume we can trigger the "history view" by simulating a search or creating a new function.
-                                // Since Sheet C is "gone" as a menu but the view logic might still be needed for details...
-                                // Let's create a simple "View Details" that reuses openFarmerHistory(id) if it exists, or implements it.
-
-                                tr.innerHTML = `
-        <td class="p-4">${statusIcon}</td>
-        <td class="p-4 font-medium text-stone-700">${f.name}</td>
-        <td class="p-4 text-stone-500 font-mono text-xs">${f.id}</td>
-        <td class="p-4 text-stone-500 text-sm">${f.lastActivity}</td>
-        <td class="p-4 text-center">
-            <button onclick="viewFarmerHistoryFromDash('${f.id}', '${f.name}')" 
-                class="text-blue-600 hover:text-blue-800 hover:bg-blue-50 p-2 rounded-full transition-colors" title="ดูประวัติ">
-                <i class="bi bi-eye"></i>
-            </button>
-        </td>
-    `;
-                                tbody.appendChild(tr);
-                            });
-
-                            footer.textContent = `แสดงทั้งหมด ${list.length} รายการ`;
-                        }
-
-                        function filterDashboardList(type) {
-                            currentFilter = type;
-                            const searchVal = (document.getElementById('dash-search').value || '').toLowerCase();
-
-                            let filtered = allDashboardFarmers;
-
-                            // 1. Filter by Type
-                            if (type !== 'all') {
-                                filtered = filtered.filter(f => f.status === type);
-                            }
-
-                            // 2. Filter by Search
-                            if (searchVal) {
-                                filtered = filtered.filter(f =>
-                                    f.name.toLowerCase().includes(searchVal) ||
-                                    String(f.id).toLowerCase().includes(searchVal)
-                                );
-                            }
-
-                            renderDashboardTable(filtered);
-                        }
-
-                        function searchDashboardList() {
-                            filterDashboardList(currentFilter);
-                        }
-
-                        // Function to handle "View Details"
-                        function viewFarmerHistoryFromDash(id, name) {
-                            // We can reuse the existing search logic from Sheet C if possible, 
-                            // OR just fetch history directly and show a modal/view.
-                            // For simplicity, let's try to reuse the existing 'searchSheetBData' logic 
-                            // but without switching to the full Sheet C view first if it confuses things.
-                            // Actually, showing Sheet C view results is fine, we just hid the menu button.
-
-                            // 1. Switch to a "Details View" (we can use Sheet C container or a new one)
-                            // Let's assume we use the container of Sheet C but rename it mentally to "Farmer Details"
-                            showView('sheet-c-view');
-
-                            // 2. Trigger search
-                            const searchInput = document.getElementById('search-input');
-                            if (searchInput) {
-                                searchInput.value = id; // Search by ID is precise
-                                // Trigger the search function existing in code
-                                // We need to find the function name. Usually it's bound to the button.
-                                // Let's call searchData() if available.
-                                if (typeof searchData === 'function') {
-                                    searchData();
-                                } else {
-                                    console.error('searchData function not found');
-                                }
-                            }
-                        }
-                        // --- END DASHBOARD LOGIC ---
 
                         const subVal = document.getElementById('substance_value');
 
