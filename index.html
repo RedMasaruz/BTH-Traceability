@@ -32,6 +32,8 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sarabun:wght@400;600;700&display=swap"
         rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -1191,63 +1193,136 @@
 
         <!-- SUBMENU VIEW (จัดการข้อมูล) -->
         <div id="submenu-view" class="space-y-6 hidden">
-            <header class="mb-10 text-center">
-                <div class="flex justify-end items-center mb-4">
+            <!-- Header & Logout -->
+            <header class="mb-6">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-stone-800">แดชบอร์ดตัวแทน</h2>
+                        <p class="text-stone-600">บริษัท บ้านไทยเฮิร์บ เซ็นเตอร์ จำกัด</p>
+                    </div>
                     <button onclick="logout()"
-                        class="bg-red-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-600 flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                        </svg>
-                        ออกจากระบบ
+                        class="bg-red-50 text-red-600 px-4 py-2 rounded-lg text-sm hover:bg-red-100 flex items-center transition-colors">
+                        <i class="bi bi-box-arrow-right me-2"></i>ออกจากระบบ
                     </button>
                 </div>
-                <h2 class="text-2xl font-bold text-stone-800 mb-2">ระบบตัวแทนของบริษัท บ้านไทยเฮิร์บ เซ็นเตอร์ จำกัด
-                </h2>
-                <p class="text-stone-600">กรุณาเลือกรายการจัดการข้อมูลแร่/นาโน/ค่าสารและอื่นๆ</p>
+
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                    <!-- Total Farmers -->
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-stone-100 flex items-center">
+                        <div class="p-3 bg-blue-50 text-blue-600 rounded-lg mr-4">
+                            <i class="bi bi-people-fill text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-stone-500">เกษตรกรทั้งหมด</p>
+                            <h3 class="text-2xl font-bold text-stone-800" id="dash-total">-</h3>
+                        </div>
+                    </div>
+
+                    <!-- Active (Green) -->
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-stone-100 flex items-center cursor-pointer hover:bg-green-50 transition-colors"
+                        onclick="filterDashboardList('active')">
+                        <div class="p-3 bg-green-50 text-green-600 rounded-lg mr-4">
+                            <i class="bi bi-check-circle-fill text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-stone-500">สถานะปกติ (14 วัน)</p>
+                            <h3 class="text-2xl font-bold text-green-600" id="dash-active">-</h3>
+                        </div>
+                    </div>
+
+                    <!-- Missing (Red) -->
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-stone-100 flex items-center cursor-pointer hover:bg-red-50 transition-colors"
+                        onclick="filterDashboardList('missing')">
+                        <div class="p-3 bg-red-50 text-red-600 rounded-lg mr-4">
+                            <i class="bi bi-exclamation-triangle-fill text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-stone-500">ขาดส่งข้อมูล</p>
+                            <h3 class="text-2xl font-bold text-red-600" id="dash-missing">-</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions Menu -->
+                <h3 class="text-lg font-semibold text-stone-700 mb-4">เมนูทำงาน</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                    <!-- Card A -->
+                    <div class="portal-card cursor-pointer hover:shadow-lg transition-all"
+                        onclick="showView('sheet-a-view')"
+                        style="background: linear-gradient(135deg, #A5C9FF, #dae7ff);">
+                        <div class="flex items-center">
+                            <div
+                                class="h-12 w-12 bg-white bg-opacity-40 rounded-full flex items-center justify-center mr-4">
+                                <i class="bi bi-file-earmark-person text-xl text-indigo-700"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-lg font-bold text-indigo-900">จัดการข้อมูลแปลง</h2>
+                                <p class="text-xs text-indigo-700">รับแร่/นาโน & ลงทะเบียน</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Production Flow -->
+                    <div class="portal-card cursor-pointer hover:shadow-lg transition-all"
+                        onclick="showView('delivery-system-view')"
+                        style="background: linear-gradient(135deg, #bbf7d0, #dcfce7);">
+                        <div class="flex items-center">
+                            <div
+                                class="h-12 w-12 bg-white bg-opacity-40 rounded-full flex items-center justify-center mr-4">
+                                <i class="bi bi-truck text-xl text-green-700"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-lg font-bold text-green-900">ระบบจัดส่ง</h2>
+                                <p class="text-xs text-green-700"> บันทึกขั้นตอนการเก็บเกี่ยว คัดแยก และแปรรูป</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </header>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Card A: Sheet A - Farm & Farmer Info -->
-                <div class="portal-card cursor-pointer" onclick="showView('sheet-a-view')"
-                    style="background: linear-gradient(135deg, #A5C9FF, #dae7ff);">
-                    <div class="flex items-center justify-center h-16 w-16 bg-white bg-opacity-30 rounded-full mb-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-indigo-800" fill="none"
-                            viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
+            <!-- Farmer List Table -->
+            <div class="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
+                <div class="p-4 border-b border-stone-100 flex flex-col md:flex-row justify-between items-center gap-4">
+                    <h3 class="text-lg font-bold text-stone-800 flex items-center">
+                        <i class="bi bi-list-ul me-2"></i>รายชื่อเกษตรกร
+                    </h3>
+                    <div class="relative w-full md:w-64">
+                        <input type="text" id="dash-search" placeholder="ค้นหาชื่อ หรือ รหัส..."
+                            class="w-full pl-10 pr-4 py-2 border border-stone-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            onkeyup="searchDashboardList()">
+                        <i class="bi bi-search absolute left-3 top-2.5 text-stone-400"></i>
                     </div>
-                    <h2 class="text-xl font-bold text-stone-800 mb-2">ข้อมูลบริหารจัดการแปลง
-                    </h2>
-                    <p class="text-sm text-stone-600">บันทึกข้อมูลการรับแร่และนาโน</p>
                 </div>
 
-                <div class="portal-card cursor-pointer" onclick="showView('delivery-system-view')"
-                    style="background: linear-gradient(135deg, #bbf7d0, #dcfce7);">
-                    <div class="flex items-center justify-center h-16 w-16 bg-white bg-opacity-30 rounded-full mb-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-800" fill="none"
-                            viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                        </svg>
-                    </div>
-                    <h2 class="text-xl font-bold text-stone-800 mb-2">ระบบการจัดส่ง (Production Flow)</h2>
-                    <p class="text-sm text-stone-600">บันทึกขั้นตอนการเก็บเกี่ยว คัดแยก และแปรรูป</p>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-stone-50 text-stone-600 text-sm uppercase">
+                            <tr>
+                                <th class="p-4 border-b font-semibold">สถานะ</th>
+                                <th class="p-4 border-b font-semibold">ชื่อ-นามสกุล</th>
+                                <th class="p-4 border-b font-semibold">รหัส</th>
+                                <th class="p-4 border-b font-semibold">เคลื่อนไหวล่าสุด</th>
+                                <th class="p-4 border-b font-semibold text-center">จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dash-table-body" class="text-sm divide-y divide-stone-100">
+                            <tr>
+                                <td colspan="5" class="p-8 text-center text-stone-400">
+                                    <div class="flex flex-col items-center justify-center">
+                                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mb-2">
+                                        </div>
+                                        <p>กำลังโหลดข้อมูล...</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
-
-                <div class="portal-card cursor-pointer" onclick="showView('sheet-c-view')"
-                    style="background: linear-gradient(135deg, #fdba74, #fed7aa);">
-                    <div class="flex items-center justify-center h-16 w-16 bg-white bg-opacity-30 rounded-full mb-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-red-800" fill="none"
-                            viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                        </svg>
-                    </div>
-                    <h2 class="text-xl font-bold text-stone-800 mb-2">สรุปข้อมูลเกษตรกรของตัวแทน</h2>
-                    <p class="text-sm text-stone-600">ดูและค้นหาข้อมูลทั้งหมดที่บันทึกไว้</p>
+                <!-- Pagination / Count -->
+                <div class="p-3 bg-stone-50 border-t border-stone-200 text-xs text-stone-500 text-center"
+                    id="dash-footer">
+                    แสดงทั้งหมด - รายการ
                 </div>
             </div>
         </div>
@@ -1319,11 +1394,11 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label for="a-gpsx" class="block text-sm font-medium mb-1">พิกัด GPS: X</label>
+                            <label for="a-gpsx" class="block text-sm font-medium mb-1">พิกัด X</label>
                             <input type="text" id="a-gpsx" placeholder="เช่น 13.7563" required class="w-full">
                         </div>
                         <div>
-                            <label for="a-gpsy" class="block text-sm font-medium mb-1">พิกัด GPS: Y</label>
+                            <label for="a-gpsy" class="block text-sm font-medium mb-1">พิกัด Y</label>
                             <input type="text" id="a-gpsy" placeholder="เช่น 100.5018" required class="w-full">
                         </div>
                     </div>
@@ -1622,7 +1697,8 @@
 
                                     <!-- ส่วนที่ 3: แร่ภูเขาไฟ -->
                                     <div class="p-4 bg-stone-100 rounded-lg border border-stone-300">
-                                        <label class="block text-sm font-bold mb-2 text-stone-800">🌋 สารปรับปรุงดิน</label>
+                                        <label class="block text-sm font-bold mb-2 text-stone-800">🌋
+                                            สารปรับปรุงดิน</label>
                                         <div class="flex flex-wrap gap-2 mb-3">
                                             <input type="checkbox" id="b-fert-volcanic" name="volcanic-type"
                                                 value="แร่ภูเขาไฟ" class="hidden">
@@ -1755,88 +1831,6 @@
         </div>
 
         <!-- SHEET C VIEW -->
-        <div id="sheet-c-view" class="space-y-6 hidden">
-            <div class="w-full pt-6 pb-2 px-6">
-                <button onclick="showView('submenu-view')"
-                    class="mb-4 text-orange-600 hover:text-orange-800 flex items-center text-sm font-medium">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                    </svg>
-                    กลับหน้าเมนู
-                </button>
-                <h2 class="text-2xl font-bold text-stone-700">
-                    สรุปข้อมูลเกษตรกรทั้งหมดของตัวแทน
-                </h2>
-            </div>
-
-            <div class="space-y-4 pt-4 border rounded-lg p-4 bg-stone-50">
-                <h3 class="text-lg font-semibold text-stone-700">ข้อมูลเกษตรกรของคุณ</h3>
-
-                <div class="flex flex-col md:flex-row gap-4 items-center">
-                    <div class="flex-grow">
-                        <p class="text-sm text-stone-600" id="auto-long-name">
-                            <!-- แสดงชื่อตัวแทนอัตโนมัติ -->
-                        </p>
-                    </div>
-                    <div>
-                        <button onclick="fetchSummaryData()"
-                            class="search-button py-2.5 px-6 rounded-lg whitespace-nowrap flex items-center justify-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                                stroke="currentColor" class="w-5 h-5 mr-1">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-                            </svg>
-                            โหลดข้อมูลเกษตรกร
-                        </button>
-                    </div>
-                </div>
-                <div id="summary-count" class="text-sm text-stone-600 font-semibold">
-                    กดปุ่ม "โหลดข้อมูลเกษตรกร" เพื่อดูข้อมูล
-                </div>
-            </div>
-
-            <!-- Data Display Section -->
-            <div id="summary-data-container"
-                class="overflow-x-auto rounded-xl border border-stone-200 shadow-lg hidden">
-                <table class="min-w-full divide-y divide-gray-300 data-table">
-                    <thead class="bg-stone-100">
-                        <tr class="text-sm uppercase text-stone-700">
-                            <th class="px-4 py-3 text-left">รหัสเกษตรกร</th>
-                            <th class="px-4 py-3 text-left">ชื่อ-สกุล</th>
-                            <th class="px-4 py-3 text-left">เบอร์โทร</th>
-                            <th class="px-4 py-3 text-left">ขนาดแปลง</th>
-                            <th class="px-4 py-3 text-left">สายพันธุ์</th>
-                            <th class="px-4 py-3 text-left">วันที่รับแร่</th>
-                            <th class="px-4 py-3 text-left">จำนวนแร่</th>
-                            <th class="px-4 py-3 text-left">วันที่รับนาโน</th>
-                            <th class="px-4 py-3 text-left">จำนวนนาโน</th>
-                            <th class="px-4 py-3 text-left">ค่าสารก่อนใช้</th>
-                            <th class="px-4 py-3 text-left">สถานะ</th>
-                        </tr>
-                    </thead>
-                    <tbody id="summary-table-body" class="divide-y divide-gray-200 text-sm bg-white">
-                        <!-- Data will be populated here -->
-                    </tbody>
-                </table>
-            </div>
-
-            <div id="summary-loading" class="text-center p-8 text-stone-500 hidden">
-                <div
-                    class="animate-spin rounded-full h-8 w-8 border-2 border-stone-400 border-t-stone-800 mx-auto mb-2">
-                </div>
-                กำลังดึงข้อมูล...
-            </div>
-
-            <div id="summary-empty" class="text-center p-8 text-stone-500 hidden">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-2 text-stone-400" fill="none"
-                    viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <p>ไม่พบข้อมูลเกษตรกรสำหรับตัวแทนนี้</p>
-            </div>
-        </div>
 
         <!-- DELIVERY SYSTEM VIEW -->
         <div id="delivery-system-view" class="space-y-6 hidden">
@@ -2512,6 +2506,11 @@
             const targetView = document.getElementById(viewId);
             if (targetView) {
                 targetView.classList.remove('hidden');
+            }
+
+            // --- TRIGGER DASHBOARD LOAD ---
+            if (viewId === 'submenu-view') {
+                loadAgentDashboard();
             }
 
             if (viewId === 'sheet-c-view') {
@@ -5973,7 +5972,149 @@
                         // ensure substance checkboxes are reset
                         const substanceCheckboxes = document.querySelectorAll('.substance-cb');
                         substanceCheckboxes.forEach(cb => cb.checked = false);
+                        // --- DASHBOARD LOGIC ---
+                        let allDashboardFarmers = [];
+                        let currentFilter = 'all'; // 'all', 'active', 'missing'
+
+                        function loadAgentDashboard() {
+                            const tableBody = document.getElementById('dash-table-body');
+                            if (tableBody) {
+                                tableBody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-stone-400"><div class="flex flex-col items-center justify-center"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mb-2"></div><p>กำลังโหลดข้อมูล...</p></div></td></tr>`;
+                            }
+
+                            const token = localStorage.getItem('session_token');
+                            const user = JSON.parse(localStorage.getItem('user_session') || '{}');
+                            const longName = user.longName || '';
+
+                            google.script.run
+                                .withSuccessHandler(response => {
+                                    if (response.success) {
+                                        // Update Stats
+                                        document.getElementById('dash-total').textContent = response.data.stats.total;
+                                        document.getElementById('dash-active').textContent = response.data.stats.active;
+                                        document.getElementById('dash-missing').textContent = response.data.stats.missing;
+
+                                        // Store and Render List
+                                        allDashboardFarmers = response.data.farmers;
+                                        filterDashboardList('all'); // Show all by default
+                                    } else {
+                                        Swal.fire({
+                                            icon: 'error',
+                                            title: 'เกิดข้อผิดพลาด',
+                                            text: response.message
+                                        });
+                                    }
+                                })
+                                .withFailureHandler(err => {
+                                    console.error(err);
+                                    Swal.fire({ icon: 'error', title: 'Error', text: 'Connection failed' });
+                                })
+                                .getAgentDashboardData(longName, token);
+                        }
+
+                        function renderDashboardTable(list) {
+                            const tbody = document.getElementById('dash-table-body');
+                            const footer = document.getElementById('dash-footer');
+
+                            if (!tbody) return;
+                            tbody.innerHTML = '';
+
+                            if (list.length === 0) {
+                                tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-stone-400">ไม่พบข้อมูล</td></tr>`;
+                                footer.textContent = 'แสดงทั้งหมด 0 รายการ';
+                                return;
+                            }
+
+                            list.forEach(f => {
+                                const tr = document.createElement('tr');
+                                tr.className = 'hover:bg-stone-50 transition-colors border-b border-stone-100 last:border-0';
+
+                                // Status Icon
+                                const statusIcon = f.status === 'active'
+                                    ? `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"><i class="bi bi-check-circle-fill me-1"></i> ปกติ</span>`
+                                    : `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800"><i class="bi bi-exclamation-triangle-fill me-1"></i> ขาดส่ง (${f.daysSince > 0 ? f.daysSince + ' วัน' : 'ไม่มีข้อมูล'})</span>`;
+
+                                // Action Button
+                                // Uses existing logic: populate search box in Sheet C (if we kept it) OR just show history directly
+                                // Ideally, we should reuse a function to show history. 
+                                // For now, let's assume we can trigger the "history view" by simulating a search or creating a new function.
+                                // Since Sheet C is "gone" as a menu but the view logic might still be needed for details...
+                                // Let's create a simple "View Details" that reuses openFarmerHistory(id) if it exists, or implements it.
+
+                                tr.innerHTML = `
+        <td class="p-4">${statusIcon}</td>
+        <td class="p-4 font-medium text-stone-700">${f.name}</td>
+        <td class="p-4 text-stone-500 font-mono text-xs">${f.id}</td>
+        <td class="p-4 text-stone-500 text-sm">${f.lastActivity}</td>
+        <td class="p-4 text-center">
+            <button onclick="viewFarmerHistoryFromDash('${f.id}', '${f.name}')" 
+                class="text-blue-600 hover:text-blue-800 hover:bg-blue-50 p-2 rounded-full transition-colors" title="ดูประวัติ">
+                <i class="bi bi-eye"></i>
+            </button>
+        </td>
+    `;
+                                tbody.appendChild(tr);
+                            });
+
+                            footer.textContent = `แสดงทั้งหมด ${list.length} รายการ`;
+                        }
+
+                        function filterDashboardList(type) {
+                            currentFilter = type;
+                            const searchVal = (document.getElementById('dash-search').value || '').toLowerCase();
+
+                            let filtered = allDashboardFarmers;
+
+                            // 1. Filter by Type
+                            if (type !== 'all') {
+                                filtered = filtered.filter(f => f.status === type);
+                            }
+
+                            // 2. Filter by Search
+                            if (searchVal) {
+                                filtered = filtered.filter(f =>
+                                    f.name.toLowerCase().includes(searchVal) ||
+                                    String(f.id).toLowerCase().includes(searchVal)
+                                );
+                            }
+
+                            renderDashboardTable(filtered);
+                        }
+
+                        function searchDashboardList() {
+                            filterDashboardList(currentFilter);
+                        }
+
+                        // Function to handle "View Details"
+                        function viewFarmerHistoryFromDash(id, name) {
+                            // We can reuse the existing search logic from Sheet C if possible, 
+                            // OR just fetch history directly and show a modal/view.
+                            // For simplicity, let's try to reuse the existing 'searchSheetBData' logic 
+                            // but without switching to the full Sheet C view first if it confuses things.
+                            // Actually, showing Sheet C view results is fine, we just hid the menu button.
+
+                            // 1. Switch to a "Details View" (we can use Sheet C container or a new one)
+                            // Let's assume we use the container of Sheet C but rename it mentally to "Farmer Details"
+                            showView('sheet-c-view');
+
+                            // 2. Trigger search
+                            const searchInput = document.getElementById('search-input');
+                            if (searchInput) {
+                                searchInput.value = id; // Search by ID is precise
+                                // Trigger the search function existing in code
+                                // We need to find the function name. Usually it's bound to the button.
+                                // Let's call searchData() if available.
+                                if (typeof searchData === 'function') {
+                                    searchData();
+                                } else {
+                                    console.error('searchData function not found');
+                                }
+                            }
+                        }
+                        // --- END DASHBOARD LOGIC ---
+
                         const subVal = document.getElementById('substance_value');
+
                         if (subVal) subVal.value = '';
 
                         // hide preview, show form (update both class and inline style)

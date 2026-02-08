@@ -374,6 +374,27 @@ function checkRateLimit(identifier) {
   cache.put(key, (count + 1).toString(), RATE_LIMIT_WINDOW_SECONDS);
 }
 
+/**
+ * Rate limiting for PUBLIC endpoints (stricter limits)
+ * Used for anonymous API calls like getAllFarmersByLongPublic
+ * @param {string} identifier - User key from Session.getTemporaryActiveUserKey()
+ */
+function checkRateLimitPublic(identifier) {
+  const MAX_PUBLIC_REQUESTS = 30; // Stricter: 30 requests per hour (1 every 2 minutes avg)
+  const WINDOW_SECONDS = 3600;
+  
+  const cache = CacheService.getScriptCache();
+  const key = `rate_limit_pub_${identifier || 'anon'}`;
+  const count = parseInt(cache.get(key) || '0', 10);
+  
+  if (count >= MAX_PUBLIC_REQUESTS) {
+    Logger.log('Public rate limit exceeded for: ' + identifier + ' (' + count + ' requests)');
+    throw new Error('คุณทำรายการบ่อยเกินไป กรุณารอสักครู่ (Rate limit exceeded)');
+  }
+  
+  cache.put(key, (count + 1).toString(), WINDOW_SECONDS);
+}
+
 function logAction(action, username, details) {
   try {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID_A);
@@ -1274,6 +1295,10 @@ function getAllFarmersByLongPublic(longName) {
       return { success: false, message: "กรุณาเลือกตัวแทน", data: [] };
     }
 
+    // SECURITY: Rate limiting to prevent data enumeration
+    const userKey = Session.getTemporaryActiveUserKey() || 'anonymous';
+    checkRateLimitPublic(userKey);
+
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID_A);
     const sheet = ss.getSheetByName(SHEET_A_NAME);
     if (!sheet || sheet.getLastRow() <= 1) return { success: true, message: "ไม่พบข้อมูลเกษตรกร", data: [] };
@@ -1344,6 +1369,148 @@ function getAllFarmersByLongPublic(longName) {
     return { success: false, message: "เกิดข้อผิดพลาด: " + error.message, data: [] };
   }
 }
+
+/**
+ * Get dashboard data for an agent:
+ * 1. Overview stats (Total, Active, Missing)
+ * 2. List of farmers with their latest activity status
+ */
+function getAgentDashboardData(longName, sessionToken) {
+  try {
+    // 1. Validate Session
+    const session = validateSessionToken(sessionToken);
+    if (!session) {
+      return { success: false, message: "กรุณาล็อกอินใหม่ (Session expired)", data: null };
+    }
+
+    // 2. Authorization Check
+    const sessionLongNorm = normalizeLongName(session.longName || '');
+    const requestLongNorm = normalizeLongName(longName || '');
+    
+    // Allow if admin OR if session long matches request long
+    if (!isAdminUsername(session.username) && sessionLongNorm !== requestLongNorm) {
+       // Partial match check
+       if (!requestLongNorm.includes(sessionLongNorm) && !sessionLongNorm.includes(requestLongNorm)) {
+          return { success: false, message: "ไม่ได้รับอนุญาตให้เข้าถึงข้อมูลนี้", data: null };
+       }
+    }
+
+    // 3. Get All Farmers (Sheet A)
+    const farmersResult = getAllFarmersByLong(longName, sessionToken);
+    if (!farmersResult.success) {
+      return { success: false, message: "ไม่สามารถดึงข้อมูลเกษตรกรได้: " + farmersResult.message };
+    }
+    const farmers = farmersResult.data || [];
+
+    // 4. Get Usage History (Sheet B) to find latest activity
+    const ssB = SpreadsheetApp.openById(SPREADSHEET_ID_B);
+    const sheetB = ssB.getSheetByName(longName);
+    
+    const latestActivityMap = {}; // farmerId -> Date object
+    
+    if (sheetB && sheetB.getLastRow() > 1) {
+        const dataB = sheetB.getDataRange().getValues();
+        const headersB = dataB[0].map(h => String(h).trim());
+        
+        // Find necessary columns
+        const idxId = findHeaderIndexFlexible(sheetB, ['รหัสเกษตรกร', 'b-farmer-id', 'id']);
+        const idxTime = findHeaderIndexFlexible(sheetB, ['เวลา', 'Timestamp', 'date']);
+        
+        // Also check detailed usage dates if available (optional refinement)
+        const idxFertDate = findHeaderIndexFlexible(sheetB, ['วันที่ใส่ปุ๋ย']);
+        const idxNanoDate = findHeaderIndexFlexible(sheetB, ['วันที่ใช้นาโน']);
+        const idxMinDate = findHeaderIndexFlexible(sheetB, ['วันที่ใช้แร่']);
+
+        if (idxId !== -1) {
+            for (let i = 1; i < dataB.length; i++) {
+                const row = dataB[i];
+                const fid = String(row[idxId] || '').trim();
+                if (!fid) continue;
+                
+                // Determine latest date from this row
+                let rowDate = null;
+                
+                // Check timestamp column first
+                if (idxTime !== -1 && row[idxTime]) {
+                    const d = new Date(row[idxTime]);
+                    if (!isNaN(d.getTime())) rowDate = d;
+                }
+                
+                // Compare with current max for this farmer
+                if (rowDate) {
+                    if (!latestActivityMap[fid] || rowDate > latestActivityMap[fid]) {
+                        latestActivityMap[fid] = rowDate;
+                    }
+                }
+            }
+        }
+    }
+
+    // 5. Process Farmers & Determine Status
+    const today = new Date();
+    const ALERT_THRESHOLD_DAYS = 14; 
+    
+    let stats = {
+        total: farmers.length,
+        active: 0,
+        missing: 0
+    };
+
+    const farmerList = farmers.map(f => {
+        const id = f['รหัสเกษตรกร'] || f['a-id'] || '';
+        const name = f['ชื่อ-นามสกุล'] || f['a-fullname'] || '';
+        const lastDate = latestActivityMap[id] || null;
+        
+        let status = 'missing'; // Default to missing
+        let daysDiff = -1;
+
+        if (lastDate) {
+            const diffTime = Math.abs(today - lastDate);
+            daysDiff = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+            
+            if (daysDiff <= ALERT_THRESHOLD_DAYS) {
+                status = 'active';
+            }
+        } else {
+            // New farmer with no usage yet
+             // Check if registered recently? (Optional)
+             // For now, if no usage -> missing data
+        }
+
+        if (status === 'active') stats.active++;
+        else stats.missing++;
+
+        return {
+            id: id,
+            name: name,
+            lastActivity: lastDate ? formatDateToDDMMYYYY(lastDate) : '-',
+            status: status, // 'active', 'missing'
+            daysSince: daysDiff
+        };
+    });
+
+    // Sort by Status (Missing first) then by Name
+    farmerList.sort((a, b) => {
+        if (a.status === b.status) {
+            return a.name.localeCompare(b.name, 'th');
+        }
+        return a.status === 'missing' ? -1 : 1; // 'missing' comes first
+    });
+
+    return {
+        success: true,
+        data: {
+            stats: stats,
+            farmers: farmerList
+        }
+    };
+
+  } catch (e) {
+    console.error('getAgentDashboardData error:', e);
+    return { success: false, message: "เกิดข้อผิดพลาด: " + e.message };
+  }
+}
+
 
 function searchSheetBData(longAffiliation, farmerId) {
   try {
