@@ -2212,7 +2212,7 @@
         // CONSTANTS & CONFIGURATION
         // =============================================
         const isGitHubPages = window.location.hostname.includes('github.io');
-        const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbyiaG9fMrCCTbnI6o16P6vQiokpNVyP-QRK6q-3WweDwDS8dpLyx2_hT1lYb2jaxi80/exec';
+        const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbyAArN6s2p6rKhz2QaXkmXEtJklzIhov60ciZnfpUS_Bu7CnKsnE_ARCVDkwZlGHOCzTA/exec';
 
         // =============================================
         // CONSTANTS
@@ -4804,27 +4804,7 @@
         // =============================================
         // EXTERNAL LINK FUNCTIONS
         // =============================================
-        function openSurveyForm() {
-            const surveyUrl = "https://script.google.com/macros/s/AKfycbwIy3D5nPqvIyVbOAjzEop3gIy2y5IXS4r1BhkmgAYEwDNZqLqGesA_2lBbQvjWzw/exec";
 
-            const newWindow = window.open(surveyUrl, '_blank');
-
-            if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
-                showMessageBox(
-                    "📋 เปิดฟอร์มสำรวจข้อมูลแปลงกระท่อม",
-                    "กรุณาคลิกลิงก์ด้านล่างนี้:<br><br>" +
-                    "<a href='" + surveyUrl + "' target='_blank' style='color: #16a34a; text-decoration: underline; font-weight: 600;'>" +
-                    "🔗 เปิดฟอร์มสำรวจข้อมูลแปลงกระท่อม" +
-                    "</a><br><br>" +
-                    "<small>หรือคัดลอกลิงก์: " + surveyUrl + "</small>"
-                );
-            } else {
-                showMessageBox(
-                    "📋 เปิดฟอร์มสำรวจข้อมูลแปลงกระท่อม",
-                    "✅ เปิดฟอร์มสำรวจในแท็บใหม่แล้ว"
-                );
-            }
-        }
 
         function openLeafSampleForm() {
             const leafSampleUrl = "https://script.google.com/macros/s/AKfycbzYZ0ZPXzjGLujcCto9GwJmDXEhQvSTelAYKt6Z_2Q9FhSCqWVw8DHVhjd2zr25N_dp/exec";
